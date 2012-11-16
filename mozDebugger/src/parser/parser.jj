@@ -1,0 +1,203 @@
+/** Parser for the mOZ language. Claudio Antares Mezzina*/options{  JDK_VERSION = "1.7";  static = true;
+   
+   FORCE_LA_CHECK= true;
+   LOOKAHEAD=2;} //t.beginColumn and t.beginLine for error outputting PARSER_BEGIN(mozParser) package parser;
+ 
+import java.io.*;
+import language.statement.*;import language.value.*;
+import java.util.*;
+
+public class mozParser {  	static mozParser parser = null;
+
+ public static IStatement parse(InputStream pgm) throws ParseException {
+		// create a parser (this object)
+		 parser = new mozParser(pgm);
+		System.out.println("started parsing ....");
+		IStatement program = mozParser.parse();
+		return program;
+		}}PARSER_END(mozParser)SKIP :{  " "| "\r"| "\t"| "\n"
+| 	< "//" (~["\n"])* "\n">}
+
+SKIP :{	< "/*" > : IN_COMMENT}<IN_COMMENT> SKIP :{	< "*/" > : DEFAULT	| < ~[] >}
+
+//language keywords
+ TOKEN:
+ {
+  	< LET : "let">
+| 	< EQ : "=">
+|  < SK: "skip">
+|  < SC : ";" >
+|  < COMMA : "," >
+|  < IF : "if" >
+|  < THEN : "then" >
+|  < ELSE : "else" > 
+|  < SEND : "send" >
+|  < REC : "receive" >
+|  < IN : "in" > 
+|  < END : "end" >
+|  < TRUE : "true" >
+|  < FALSE : "false" >
+|  < THR	: "thread" >
+|  <PROC : "proc" > 
+|  <CL  : "{" >
+|  < CR : "}" >
+|  < PL: "(">
+|  < PR: ")">
+|  < PORT : "port">
+
+
+}
+//identifiers
+TOKEN :
+{
+  <ID:["a"-"z","A"-"Z"](["a"-"z","_","0"-"9","A"-"Z"])*>
+}
+TOKEN :{
+   < CONSTANT : (< DIGIT >)+ >| < #DIGIT : [ "0"-"9" ] >}
+IStatement parse():{
+  IStatement pgm = null; }
+{
+  pgm = stm_list() < EOF>
+  {
+	return pgm;  }}
+
+//sequential composition of statements
+IStatement stm_list():
+{
+  IStatement sx = null;
+  IStatement dx = null;
+}
+{
+	sx= stm()(<SC> dx = stm_list())*
+	{
+	  if(dx != null)
+		  return new Sequence(sx,dx);	 return sx;
+	}
+} 
+ 
+
+IStatement stm():
+{
+  Token t;
+  IValue val;
+  IStatement sx = null;
+  IStatement dx = null;
+  ArrayList< String> args;
+}
+{
+  //skip 	
+  < SK >  {
+    return new Skip();  }
+|	//shoul put a trailing end ...
+	< IF> t=< ID> < THEN> sx = stm_list() < ELSE> dx =stm_list() < END>
+	{	  
+	  return new Conditional(t.toString(),sx,dx);	}
+	
+|	//value or procedure assigment 
+	< LET> t =< ID> < EQ> ( val = value() | val = receive_value() ) <IN > sx=stm_list() < END>
+
+	{
+
+	 // System.out.println("Scope con "+t);
+	  return new Assignment(t.toString(), val, sx);	}
+//|	< LET> < ID> < EQ> receive_value() <IN > stm_list() < END>
+
+|	//thread creation 
+	sx =spawn()
+	{
+	  return sx;	}
+ 
+	//procedure invocation
+| 	
+	// send or procedure invocation
+	  < CL>
+	  (		  	sx = send()		| 		 	
+  			args= var_list()
+		 	{
+		 	  	//the first element of the list is the invoked procedure
+		   		if(args.size() >0)
+		   		{
+			     String proc_name = args.remove(0);
+			     sx = new Invoke(proc_name, args);
+			     			   }		 	}
+		
+	)
+	< CR>
+	{
+	  return sx;	}
+ 
+}
+
+//creation new thread
+IStatement spawn():
+{
+  IStatement body;}{
+  < THR> body = stm_list() < END>
+  {
+    return new ThreadStm(body);  }}
+
+IStatement send():
+{ 
+  Token chan,value;}{
+  < SEND> chan=< ID> value=< ID>  {
+    return new Send(chan.toString(), value.toString());  }}
+
+
+IValue receive_value():
+{
+  Token id;}{
+  < CL> <REC > id =< ID>< CR >
+ 	{		return new Receive(id.toString());
+ 	} }
+
+BoolValue if_value():
+{
+  boolean e;}
+{
+ < PL> e=bool_val()< PR> {
+	return new BoolValue(e);
+ }}
+
+boolean bool_val():{}
+{
+  < TRUE>  {
+    return true;  }  
+| < FALSE>	{    	return false;	} 
+}
+IValue value():
+{
+  ArrayList< String> var= null;
+  IStatement stmlist = null;
+  boolean bol;
+}{
+ < PROC> var=proc_var() stmlist = stm_list() < END > {
+   return new Procedure(var, stmlist);
+ }
+|
+	bol=bool_val()	{
+	  return new BoolValue(bol);	}
+| 
+	< PORT>
+	{
+	  return new PortCreation();	}}
+
+ArrayList< String> proc_var():
+{
+  ArrayList< String> ret;}
+
+{
+  < CL> ret = var_list()< CR>
+  	{
+  	  return ret;  	}	}
+
+
+ArrayList< String> var_list():
+{
+  Token id;
+  ArrayList< String> ret = new ArrayList< String>();}
+{
+	 (id = < ID>	{
+	  ret.add(id.toString());	}
+
+	)*	{
+	  return ret;	}}
