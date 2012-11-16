@@ -46,7 +46,7 @@ SKIP :{	< "/*" > : IN_COMMENT}<IN_COMMENT> SKIP :{	< "*/" > : DEFAULT	| <
 |  < PORT : "port">
 
 
-}
+} 
 //identifiers
 TOKEN :
 {
