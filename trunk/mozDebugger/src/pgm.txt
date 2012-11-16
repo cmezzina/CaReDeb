@@ -1,0 +1,5 @@
+let a = true in
+	let y = proc {x} if x then skip; skip else skip end end in
+		{y a}
+	end
+end	
