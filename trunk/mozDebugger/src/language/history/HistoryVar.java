@@ -21,6 +21,6 @@ public class HistoryVar implements IHistory {
 
 	public String toString()
 	{
-		return "created variable "+id;
+		return "new variable "+id;
 	}
 }

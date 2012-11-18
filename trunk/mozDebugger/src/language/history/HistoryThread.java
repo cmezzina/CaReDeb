@@ -19,6 +19,6 @@ public class HistoryThread implements IHistory {
 	}
 	public String toString()
 	{
-		return "generating thread "+thread_id;
+		return "new thread "+thread_id;
 	}
 }

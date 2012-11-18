@@ -46,6 +46,6 @@ public class HistoryReceive implements IHistory {
 
 	public String toString()
 	{
-		return "stored value from chan "+ from + " in variable "+ var;
+		return "read in "+var + " from "+from;
 	}
 }

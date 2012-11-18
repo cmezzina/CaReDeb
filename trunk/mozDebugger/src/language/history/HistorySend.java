@@ -21,7 +21,7 @@ public class HistorySend implements IHistory {
 	}
 	@Override
 	public String toString() {
-		return "wrote on channel " + chan;
+		return "wrote on " + chan;
 	}
 
 }

@@ -21,6 +21,6 @@ public class HistoryProc implements IHistory {
 
 	public String toString()
 	{
-		return "created function "+id;
+		return "new function "+id;
 	}
 }

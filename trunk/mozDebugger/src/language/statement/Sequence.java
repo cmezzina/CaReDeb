@@ -31,9 +31,15 @@ public class Sequence implements IStatement {
 		
 		public String toString()
 		{
-			
+			String next;
 			if(dx !=null && dx.getType() != StatementType.ESC)
-				return sx.toString() + ";" + dx.toString();
+			{
+				next = dx.toString();
+				if(!next.equals(""))
+					return sx.toString() + ";" + dx.toString();
+				else
+					return sx.toString();
+			}
 			return sx.toString();
 		}
 		@Override
