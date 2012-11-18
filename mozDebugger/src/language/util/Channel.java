@@ -6,9 +6,14 @@ import language.value.IValue;
 
 public class Channel {
 
-	//the first element is the last one inserted
+	//the first element in the channel is the last one inserted
+	
+	//should use pairs instead of 2 lists
 	private ArrayList<IValue> value;
 	private ArrayList<String> sender;
+	
+	
+	//points to the next element to be read
 	private int index;
 	
 	public Channel()
@@ -76,5 +81,27 @@ public class Channel {
 				return ret;
 	}
 	
+	public ArrayList<IValue> chanValueStory()
+	{
+		if(index == value.size())
+			return null;
+		ArrayList<IValue> ret = new ArrayList<IValue>();
+		for(int i = index; i<value.size(); i++)
+		{
+			ret.add(value.get(i));
+		}
+		return ret;
+	}
+	public ArrayList<String> chanSenderStory()
+	{
+		if(index == value.size())
+			return null;
+		ArrayList<String> ret = new ArrayList<String>();
+		for(int i = index; i<value.size(); i++)
+		{
+			ret.add(sender.get(i));
+		}
+		return ret;
+	}
 
 }

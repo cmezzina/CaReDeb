@@ -34,7 +34,7 @@ public class Conditional implements IStatement {
 	
 	public String toString()
 	{
-		return "if ( "+ guard +" ) then " +left +" else "+ right + " end";
+		return "if "+ guard +" then " +left +" else "+ right + " end";
 	}
 	@Override
 	public StatementType getType() {

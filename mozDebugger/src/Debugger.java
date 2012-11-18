@@ -28,16 +28,19 @@ public class Debugger {
 	static int thread_count =0;
 	static int var_count=0;
 	
-	static IStatement program;
-
-	static HashMap<String, IValue> store= new HashMap<String, IValue>();
-	//static HashMap<String, ArrayList<IValue>> chans = new HashMap<String,ArrayList<IValue>>();
-	static HashMap<String, Channel> chans = new HashMap<String, Channel>();
 	
+	static IStatement program;
+	static String last_com="";
+	
+	//stores
+	static HashMap<String, IValue> store= new HashMap<String, IValue>();
+	static HashMap<String, Channel> chans = new HashMap<String, Channel>();
 	static HashMap<String,IValue> procs = new HashMap<String,IValue>();
 	static HashMap<String,IStatement> threadlist = new HashMap<String, IStatement>();
+	
 	static HashMap<String , ArrayList<IHistory>> history = new HashMap<String, ArrayList<IHistory>>();
 	
+	/***prompt messages ***/
 	static String warning="\n++";
 	static String error="\n**";
 	static String done = "...done";
@@ -53,8 +56,8 @@ public class Debugger {
 			program = mozParser.parse(new FileInputStream(path));
 			//program represents the first configuration
 			
-		
-
+			
+			
 			String initial = generateThreadId();
 			threadlist.put(initial, program);
 			history.put(initial, new ArrayList<IHistory>());
@@ -68,8 +71,6 @@ public class Debugger {
 		}
 		System.out.println(warning+" type help to see all the commands \n\n");
 
-	
-		
 		String command;
 		try {
 
@@ -77,6 +78,13 @@ public class Debugger {
 			{
 				System.out.print("Insert command : ");
 				command = cons.readLine();
+
+				//enter is a shortcut to redo the same command
+				
+				if(command.equals("") && !last_com.equals(""))
+					command = last_com;
+				
+				last_com = command;
 				String[] cmd = command.split(" ");
 				if(cmd[0].equals("quit"))
 				{
@@ -84,12 +92,12 @@ public class Debugger {
 					return;
 				}
 
-				if(cmd[0].equals("help"))
+				if(cmd[0].equals("help") || cmd[0].equals("c"))
 				{
 					showHelp();
 				}
 				else
-					if(cmd[0].equals("store"))
+					if(cmd[0].equals("store") || cmd[0].equals("s"))
 					{
 						if(store.size() == 0)
 						{
@@ -100,7 +108,7 @@ public class Debugger {
 					
 					}
 				else 
-					if(cmd[0].equals("print"))
+					if(cmd[0].equals("print") || cmd[0].equals("p"))
 					{
 						
 						if(threadlist.containsKey(cmd[1]))
@@ -115,13 +123,13 @@ public class Debugger {
 						}
 					}
 					else
-						if(cmd[0].equals("list"))
+						if(cmd[0].equals("list") || cmd[0].equals("l"))
 						{
 
 							System.out.println("Available threads : "+threadlist.keySet());
 						}
 					else
-						if(cmd.length >1 && cmd[0].equals("step"))
+						if(cmd.length >1 && ( cmd[0].equals("forth") || cmd[0].equals("f")))
 						{
 							IStatement body = threadlist.get(cmd[1]);
 							if(body != null)
@@ -142,10 +150,10 @@ public class Debugger {
 							}
 							else
 							{
-								System.out.println("\n**invalid thread name "+ cmd[1]+ "\n");
+								System.out.println(error+"invalid thread name "+ cmd[1]+ "\n");
 							}
 						}
-						else if(cmd.length>1 && cmd[0].equals("back"))
+						else if(cmd.length>1 && (cmd[0].equals("back") || cmd[0].equals("b")))
 						{
 							if(!threadlist.containsKey(cmd[1]))
 							{
@@ -160,13 +168,14 @@ public class Debugger {
 							}
 								stepBack(cmd[1]);
 						}
-						else if(cmd.length >1 && cmd[0].equals("story"))
+						else if(cmd.length >1 && (cmd[0].equals("story") || cmd[0].equals("h")))
 						{
 							printHistory(cmd[1]);
 						}
 						else
 						{
-							System.out.println("\n**invalid command "+ cmd[0]+ "\n");
+							last_com = "";
+							System.out.println(error+"invalid command "+ cmd[0]+ "\n");
 						}
 						
 			}
@@ -443,7 +452,10 @@ public class Debugger {
 	{
 		ArrayList<IHistory> lst; 
 		IStatement body = threadlist.get(thread_id);
+		
+		//thread next action after a step backward
 		IStatement new_body = null;
+		//the rest of the body
 		IStatement next=null ;
 		
 		//checks about thread id and history are done in the callee
@@ -554,7 +566,7 @@ public class Debugger {
 								new_body = beforeEsc(body);
 							
 								new_body = new  Assignment(log.getPort_name(), new PortCreation(), new_body);
-							//removing from store variale and procedure
+							//removing from store variable and procedure
 								store.remove(log.getPort_name());
 								procs.remove(xi);
 							
@@ -590,17 +602,17 @@ public class Debugger {
 							IStatement thread_body = threadlist.get(xi);
 							if(thread_body == null)
 							{
-								//error
+								//this cannot happen
 							}
 							new_body = new ThreadStm(thread_body);
 							next = body;
-							//removing from store variale and procedure
+							//removing from store variable and procedure
 							threadlist.remove(xi);
 							history.remove(xi);
 						}
 						else
 						{
-							System.out.println(warning +" cannot revert port creation of "+log.getThread_id() +" since it has not empty history");
+							System.out.println(warning +" cannot revert thread creation of "+log.getThread_id() +" since it has not empty history");
 							return;
 						}
 					}
@@ -730,13 +742,14 @@ public class Debugger {
 
 	private static void showHelp()
 	{
-		System.out.println("\nCommands : \n\t step thread_name (executes forward one step of thread_name)");
-		System.out.println("\t back thread_name (executes backward one step of thread_name)");
-		System.out.println("\t list (displays all the available threads)");
-		System.out.println("\t print id (shows the state of a thread, channel, or variable)");
-		System.out.println("\t story thread_id (shows thread computational history)");
-		System.out.println("\t store (prints all the ids contained in the store)");
-		System.out.println("\t quit\n");
+		System.out.println("\nCommands : \n\t forth (f) thread_name (executes forward one step of thread_name)");
+		System.out.println("\t back (b) thread_name (executes backward one step of thread_name)");
+		System.out.println("\t list (l) (displays all the available threads)");
+		System.out.println("\t print (p) id (shows the state of a thread, channel, or variable)");
+		System.out.println("\t story (h) thread_id (shows thread computational history)");
+		System.out.println("\t store  (s) (displays all the ids contained in the store)");
+		System.out.println("\t help  (c) (displays all commands)");
+		System.out.println("\t quit (q)\n");
 	}
 
 	/*prints the status of an id, including threads*/
@@ -830,6 +843,30 @@ public class Debugger {
 			
 			
 		}
+	}
+	
+	static void printChanHistory(String chan_id)
+	{
+		Channel ch = chans.get(chan_id);
+		if(ch == null)
+		{	
+			System.out.println(warning + " no history for channel "+ chan_id);
+			return;
+		}
+		
+		if(ch.chanSenderStory() == null)
+		{
+			System.out.println(warning +" empty history for thread "+chan_id);
+		}
+
+		ArrayList<IValue> val = ch.chanValueStory();
+		ArrayList<String> ids = ch.chanSenderStory();
+		int size = val.size()-1;
+		for(int i=size; i >=0; i--)
+		{
+			System.out.println("("+ids.get(i)+" , "+ val.get(i)+")");
+		}
+		
 	}
 	
 	//there should be a better recursive implementation of this

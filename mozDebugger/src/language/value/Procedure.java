@@ -33,9 +33,9 @@ public class Procedure implements IValue {
 	{
 		String ret= " proc {";
 		for (String param : params) {
-			ret +=" "+param;
+			ret +=" "+param; 
 		}
-		return ret+"} " + body.toString() + " end";
+		return ret+" } " + body.toString() + " end";
 	}
 	@Override
 	public void rename(String old_id, String new_id) {

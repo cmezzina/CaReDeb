@@ -24,6 +24,6 @@ public class HistoryPort implements IHistory {
 
 	public String toString ()
 	{
-		return "created port "+port_name;
+		return "new port "+port_name;
 	}
 }
