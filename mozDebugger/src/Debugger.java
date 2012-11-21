@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.prefs.BackingStoreException;
-
 import language.history.HistoryEsc;
 import language.history.HistoryIf;
 import language.history.HistoryInvoke;
@@ -787,8 +785,8 @@ public class Debugger {
 		while(history.get(thread_id).size() != 0)
 		{
 			try {
-				int nro = stepBack(thread_id);
-				System.out.println(nro);
+				stepBack(thread_id);
+	//			System.out.println(nro);
 			} catch (WrongElementChannel e) {
 			
 				System.out.println("roll till");
@@ -809,7 +807,7 @@ public class Debugger {
 			System.out.println(warning + " invalid thread id "+thread_id);
 			return;
 		}
-		int i = history.get(thread_id).size();
+	
 		while(history.get(thread_id).size() > 0 && steps >0)
 		{
 			try {
