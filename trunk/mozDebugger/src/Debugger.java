@@ -5,10 +5,32 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
-import language.history.*;
-import language.statement.*;
+import language.history.HistoryEsc;
+import language.history.HistoryIf;
+import language.history.HistoryInvoke;
+import language.history.HistoryPort;
+import language.history.HistoryProc;
+import language.history.HistoryReceive;
+import language.history.HistorySend;
+import language.history.HistorySkip;
+import language.history.HistoryThread;
+import language.history.HistoryType;
+import language.history.HistoryVar;
+import language.history.IHistory;
+import language.statement.Assignment;
+import language.statement.Conditional;
+import language.statement.Esc;
+import language.statement.IStatement;
+import language.statement.Invoke;
+import language.statement.Nil;
+import language.statement.Send;
+import language.statement.Sequence;
+import language.statement.Skip;
+import language.statement.StatementType;
+import language.statement.ThreadStm;
 import language.util.Channel;
 import language.value.BoolValue;
 import language.value.IValue;
@@ -17,7 +39,10 @@ import language.value.Procedure;
 import language.value.Receive;
 import language.value.SimpleId;
 import language.value.ValueType;
-import parser.*;
+import parser.ParseException;
+import parser.mozParser;
+import expection.ChildMissingException;
+import expection.WrongElementChannel;
 public class Debugger {
 
 	static String path="C:\\Users\\aa\\workspace\\mozDebugger\\src\\pgm.txt";
@@ -27,7 +52,7 @@ public class Debugger {
 	static int proc_count =0;
 	static int thread_count =0;
 	static int var_count=0;
-	
+	static int pc=0;
 	
 	static IStatement program;
 	static String last_com="";
@@ -56,8 +81,6 @@ public class Debugger {
 			program = mozParser.parse(new FileInputStream(path));
 			//program represents the first configuration
 			
-			
-			
 			String initial = generateThreadId();
 			threadlist.put(initial, program);
 			history.put(initial, new ArrayList<IHistory>());
@@ -71,9 +94,10 @@ public class Debugger {
 		}
 		System.out.println(warning+" type help to see all the commands \n\n");
 
+				
 		String command;
 		try {
-
+				
 			while( true)
 			{
 				System.out.print("Insert command : ");
@@ -166,7 +190,19 @@ public class Debugger {
 								System.out.println(warning +"invalid memory for thread "+cmd[1]);
 								continue;
 							}
-								stepBack(cmd[1]);
+								try {
+									stepBack(cmd[1]);
+									System.out.println(done);
+
+								} catch (WrongElementChannel e) {
+									System.out.println(warning+ e.getMsg());
+								} catch (ChildMissingException e) {
+									// TODO Auto-generated catch block
+									System.out.println(warning+ e.getMsg());								}
+						}
+						else if(cmd.length >1 && (cmd[0].equals("roll") || cmd[0].equals("r")))
+						{
+							rollEnd(cmd[1]);
 						}
 						else if(cmd.length >1 && (cmd[0].equals("story") || cmd[0].equals("h")))
 						{
@@ -270,10 +306,11 @@ public class Debugger {
 									return stm;
 								}
 								System.out.println("receiving from "+from +" in "+new_id);
-								IValue received =ch.getHead();
+								int gamma= pc++;
+								IValue received =ch.receive(thread_name, gamma);
 	//							chans.put(chanid,  lst);
 								store.put(new_id, received);
-								h.add(new HistoryReceive(from, new_id));
+								h.add(new HistoryReceive(from, new_id,gamma));
 	
 							}
 						}
@@ -371,11 +408,12 @@ public class Debugger {
 	
 					//IValue tosend = store.get(snd.getSub());
 					IValue tosend = new SimpleId(snd.getSub());
+					int gamma=pc++;
 					Channel tmp = chans.get(id);
-					tmp.add(tosend, thread_name);
+					tmp.send(tosend, thread_name,gamma);
 					//chans.put(id, tmp );
 					System.out.println("sending to channel "+to);
-					h.add(new HistorySend(to));
+					h.add(new HistorySend(to,gamma));
 					history.put(thread_name, h);
 					return new Nil();
 				}	
@@ -448,11 +486,11 @@ public class Debugger {
 			return null;
 	}
 	
-	private  static void stepBack(String thread_id)
+	private  static int stepBack(String thread_id) throws WrongElementChannel, ChildMissingException
 	{
 		ArrayList<IHistory> lst; 
 		IStatement body = threadlist.get(thread_id);
-		
+		int ret =0;
 		//thread next action after a step backward
 		IStatement new_body = null;
 		//the rest of the body
@@ -464,7 +502,7 @@ public class Debugger {
 		if(lst.size() == 0)
 		{
 			System.out.println(warning + "empty history for thread "+thread_id);
-			return;
+			return ret;
 		}
 		
 		int index = lst.size()-1;
@@ -574,7 +612,7 @@ public class Debugger {
 							else
 							{
 								System.out.println(warning +" cannot revert port creation of "+log.getPort_name() +" since it is not empty");
-								return;
+								return ret;
 							}
 						}
 						
@@ -612,8 +650,9 @@ public class Debugger {
 						}
 						else
 						{
-							System.out.println(warning +" cannot revert thread creation of "+log.getThread_id() +" since it has not empty history");
-							return;
+							throw new ChildMissingException(" cannot revert thread creation of "+log.getThread_id() +" since it has not empty history", log.getThread_id());
+//							System.out.println(warning +" cannot revert thread creation of "+log.getThread_id() +" since it has not empty history");
+//							return;
 						}
 					}
 				}
@@ -622,15 +661,21 @@ public class Debugger {
 			case SEND:{
 				HistorySend log = (HistorySend)action;
 				String id = log.getChan();
+				ret = log.getInstruction();
 				SimpleId tmp = (SimpleId) store.get(id);
 				Channel ch = chans.get(tmp.getId());
 				if(ch !=null)
 				{
-					IValue val =ch.sendBack(thread_id);
+					if(ch.isEmpty())
+						//different kind of exception ... should reverse who read the msg ..
+						throw new WrongElementChannel(" value on channel "+tmp.getId() +" does not belong to thread "+thread_id, ch.getReaders(thread_id));
+					IValue val =ch.reverseSend(thread_id);
 					if(val == null)
 					{
-						System.out.println(warning +" value on channel "+tmp.getId() +" does not belong to thread "+thread_id);
-						return;
+						//System.out.println(ch.beforeThread(thread_id));
+						throw new WrongElementChannel(" value on channel "+tmp.getId() +" does not belong to thread "+thread_id, ch.getSenders(thread_id));
+						//System.out.println(warning +"value on channel "+tmp.getId() +" does not belong to thread "+thread_id);
+						//return;
 					}
 					//next = afterEsc(body);
 					//new_body = beforeEsc(body);
@@ -646,11 +691,13 @@ public class Debugger {
 			{
 				HistoryReceive log = (HistoryReceive)action;
 				String id = log.getFrom();
+				ret = log.getInstruction();
+
 				//lookup
 				String xi = ((SimpleId)store.get(id)).getId();
 				Channel ch = chans.get(xi);
 				//putting back msg
-				ch.receiveBack();
+				ch.reverseReceive(thread_id);
 				
 				//receive is an assigment
 				next = afterEsc(body);
@@ -682,7 +729,7 @@ public class Debugger {
 				history.put(thread_id, lst);
 				threadlist.put(thread_id, new_body);
 				 stepBack(thread_id);
-				 return;
+				 return 0;
 			}
 		}
 	
@@ -692,9 +739,56 @@ public class Debugger {
 		lst.remove(index);
 		history.put(thread_id, lst);
 		threadlist.put(thread_id, new_body);
-		System.out.println(done);
+		return ret;
 	}
 
+	
+	
+	private static void rollTill(HashMap<String, Integer> map)
+	{
+		Iterator<String> it =  map.keySet().iterator();
+		while(it.hasNext())
+		{
+			String id = it.next();
+			int gamma = map.get(id);
+			
+			while(true)
+			{
+				try {
+					int nro = stepBack(id);
+					if(nro == gamma)
+						break;
+				} catch (WrongElementChannel e) {
+					rollTill(e.getDependencies());
+				} catch (ChildMissingException e) {
+					// TODO Auto-generated catch block
+					rollEnd(e.getChild());
+				}
+				
+			}
+		
+		}
+	}
+	
+	private static void rollEnd(String thread_id)
+	{
+		while(history.get(thread_id).size() != 0)
+		{
+			try {
+				int nro = stepBack(thread_id);
+				System.out.println(nro);
+			} catch (WrongElementChannel e) {
+				HashMap<String, Integer> map= e.getDependencies();
+				System.out.println("roll till");
+				rollTill(e.getDependencies());
+				}
+			 catch (ChildMissingException e) {
+				// TODO Auto-generated catch block
+				System.out.println(warning +" reversing child thread "+e.getChild());
+				rollEnd(e.getChild());
+			}
+		}
+	}
 	private static String generateChanId()
 	{
 		return "chan_"+(chan_count++);
@@ -845,7 +939,7 @@ public class Debugger {
 		}
 	}
 	
-	static void printChanHistory(String chan_id)
+	/*static void printChanHistory(String chan_id)
 	{
 		Channel ch = chans.get(chan_id);
 		if(ch == null)
@@ -867,7 +961,7 @@ public class Debugger {
 			System.out.println("("+ids.get(i)+" , "+ val.get(i)+")");
 		}
 		
-	}
+	}*/
 	
 	//there should be a better recursive implementation of this
 	

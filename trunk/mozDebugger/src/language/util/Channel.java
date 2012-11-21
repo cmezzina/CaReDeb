@@ -1,107 +1,172 @@
 package language.util;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 import language.value.IValue;
+import language.value.SimpleId;
 
 public class Channel {
 
 	//the first element in the channel is the last one inserted
 	
-	//should use pairs instead of 2 lists
-	private ArrayList<IValue> value;
-	private ArrayList<String> sender;
+	//value, sender
+	private LinkedList<Tuple<IValue,String>> value;
+	private LinkedList<Integer> pc_sender;
+	//value, sender, receiver
+	private LinkedList<Tuple<Tuple<IValue,String>,String>> story;
+	private LinkedList<Integer> pc_reader;
 	
 	
-	//points to the next element to be read
-	private int index;
 	
 	public Channel()
 	{
-		value = new ArrayList<IValue>();
-		sender = new ArrayList<String>();
-		index = 0;
+		value = new LinkedList<Tuple<IValue,String>>();
+		story = new LinkedList<Tuple<Tuple<IValue,String>,String>>();
+		pc_sender = new LinkedList<Integer>();
+		pc_reader = new LinkedList<Integer>();
 	}
 	
 	public boolean isEmpty()
 	{
-//		if(index == 0)
-		return (index == 0);
+		return value.isEmpty();
 	}
 	
-	public void add(IValue val, String thread)
+	public void send(IValue val, String thread, int gamma)
 	{
-		value.add(val);
-		sender.add(thread);
-		index++;
+		value.add(new Tuple<IValue, String>(val, thread));
+		pc_sender.add(gamma);
 //		System.out.println(" ... inserted value "+val +" by thread "+thread );
 	}
 	
-	public IValue getHead()
+	public IValue receive(String thread, int gamma)
 	{
-		if(index == 0)
+		if(value.isEmpty())
 			return null;
 		
-		int tmp = index;
-		index--;
-		return value.get(value.size() - tmp );
+		Tuple<IValue, String> ret= value.removeFirst();
+		pc_reader.addFirst(gamma);
+		story.addFirst(new Tuple<Tuple<IValue,String>,String>(ret,thread));
+		return ret.getFirst();
 	}
 	
 	//removes the head of the channel (reverse send)
-	public IValue sendBack(String thread)
+	public IValue reverseSend(String thread)
 	{
-		IValue ret=null;
-		int i = sender.size() - index;
-		if(thread.equals(sender.get(i)))
+		if(value.isEmpty())
+			return null;
+		Tuple<IValue, String> head = value.getFirst();
+		//the head of the channel belongs to the thread
+		if(head.getSecond().equals(thread))
 		{
-			ret = value.remove(i);
-			sender.remove(i);
-			index--;
+			value.remove();
+			int i=pc_sender.remove();
+			System.out.println(i);
+			return head.getFirst();
 		}
-		return ret;
+		else return null;
+			
 	}
 	
 	//augment the index
-	public void receiveBack()
+	public boolean reverseReceive(String thread)
 	{
-		index++;
+		if(story.isEmpty())
+			return false;
+		//the receiver of the top (tuple) of the history shold be = thread
+		Tuple<Tuple<IValue, String>, String> log = story.getFirst();
+		if(log.getSecond().equals(thread))
+		{
+			story.remove();
+			value.addFirst(log.getFirst());
+			return true;
+		}
+			return false;
 	}
 	
-	//for printing purpose
+	//should return a pairs of value sender
 	public ArrayList<IValue> getValues()
 	{
 		ArrayList<IValue> ret = new ArrayList<IValue>();
-		if(!value.isEmpty())
-		{	
-			int i = index-1;
-			
-			for(int j=0;  j <=i ; j++ )
-				ret.add(value.get(j));
-		}
-				return ret;
+		Iterator<Tuple<IValue,String>> it = value.iterator();
+		while(it.hasNext())
+			ret.add(it.next().getFirst());
+		return ret;
 	}
 	
-	public ArrayList<IValue> chanValueStory()
+	public ArrayList<IValue> getHistory()
 	{
-		if(index == value.size())
-			return null;
 		ArrayList<IValue> ret = new ArrayList<IValue>();
-		for(int i = index; i<value.size(); i++)
-		{
-			ret.add(value.get(i));
-		}
+		Iterator<Tuple<Tuple<IValue,String>,String>> it = story.iterator();
+		while(it.hasNext())
+			ret.add(it.next().getFirst().getFirst());
 		return ret;
 	}
-	public ArrayList<String> chanSenderStory()
+	
+	//should be hashmap thread_id, pc
+	//returns a list of readers that have to release their msg
+	public HashMap<String, Integer> getReaders(String thread)
 	{
-		if(index == value.size())
-			return null;
-		ArrayList<String> ret = new ArrayList<String>();
-		for(int i = index; i<value.size(); i++)
-		{
-			ret.add(sender.get(i));
+		HashMap<String,Integer> ret= new HashMap<String, Integer>();
+//		Iterator<Tuple<Tuple<IValue,String>,String>> it= story.iterator();
+		for(int i =0; i < story.size(); i++)
+		{	Tuple<Tuple<IValue, String>, String> val = story.get(i);
+			String sender = val.getFirst().getSecond();
+			System.out.println("..."+ val.getFirst().getSecond());
+			if(sender.equals(thread))
+			{
+				//first occurrence
+				if(!ret.containsKey(val.getSecond()) || ret.get(val.getSecond()) > pc_reader.get(i))
+					{
+						ret.put(val.getSecond(),pc_reader.get(i));
+						System.out.println(val.getSecond() + " ... "+ret.get(val.getSecond()));
+					}
+				
+			//	ret.add(val.getSecond());
+				return ret;
+			}
+				ret.put(val.getSecond(), pc_reader.get(i));
 		}
 		return ret;
 	}
-
+	
+	public HashMap<String, Integer> getSenders(String thread)
+	{
+		HashMap<String,Integer> ret = new HashMap<String,Integer>();
+		Tuple<IValue,String> val;
+		
+		int j = value.size()-1;
+		for(int i=j; i >=0; i--)
+		{
+			val = value.get(i);
+			if(val.getSecond().equals(thread))
+				return ret;
+			else
+			{
+				ret.put(val.getSecond(), pc_sender.get(i));
+			}
+		}
+		return ret;
+	}
+	
+	
+	
+	//for testing purposes
+	public static void main(String args[])
+	{
+		Channel ch = new Channel();
+		ch.send(new SimpleId("pippo"), "t3", 4);
+		ch.send(new SimpleId("pluto"), "t2", 1);
+		ch.send(new SimpleId("paperino"), "t1", 2);
+		
+		
+		System.out.println(ch.getValues());	
+		System.out.println(ch.receive("t0", 1));
+		System.out.println(ch.getValues());	
+		System.out.println(ch.reverseReceive("t1") );
+		System.out.println(ch.getValues());	
+		
+	}
 }
