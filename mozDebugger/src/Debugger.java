@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.prefs.BackingStoreException;
 
 import language.history.HistoryEsc;
 import language.history.HistoryIf;
@@ -32,6 +33,7 @@ import language.statement.Skip;
 import language.statement.StatementType;
 import language.statement.ThreadStm;
 import language.util.Channel;
+import language.util.Tuple;
 import language.value.BoolValue;
 import language.value.IValue;
 import language.value.PortCreation;
@@ -191,7 +193,9 @@ public class Debugger {
 								continue;
 							}
 								try {
-									stepBack(cmd[1]);
+									if(cmd.length == 2)
+										stepBack(cmd[1]);
+									else rollNsteps(cmd[1], Integer.parseInt(cmd[2]));
 									System.out.println(done);
 
 								} catch (WrongElementChannel e) {
@@ -728,8 +732,8 @@ public class Debugger {
 				lst.remove(index);
 				history.put(thread_id, lst);
 				threadlist.put(thread_id, new_body);
-				 stepBack(thread_id);
-				 return 0;
+				 return stepBack(thread_id);
+				 //return ret;
 			}
 		}
 	
@@ -744,6 +748,7 @@ public class Debugger {
 
 	
 	
+	//rollbacks a thread till a given action
 	private static void rollTill(HashMap<String, Integer> map)
 	{
 		Iterator<String> it =  map.keySet().iterator();
@@ -756,6 +761,7 @@ public class Debugger {
 			{
 				try {
 					int nro = stepBack(id);
+					System.out.println("... reversing thread "+id +" of one step");
 					if(nro == gamma)
 						break;
 				} catch (WrongElementChannel e) {
@@ -770,8 +776,14 @@ public class Debugger {
 		}
 	}
 	
+	//rollbacks a thread to the beginning causing the failure of its caused actions
 	private static void rollEnd(String thread_id)
 	{
+		if(!threadlist.containsKey(thread_id))
+		{
+			System.out.println(warning + " invalid thread id "+thread_id);
+			return;
+		}
 		while(history.get(thread_id).size() != 0)
 		{
 			try {
@@ -789,6 +801,34 @@ public class Debugger {
 			}
 		}
 	}
+	
+	private static void rollNsteps(String thread_id, int steps)
+	{
+		if(!threadlist.containsKey(thread_id))
+		{
+			System.out.println(warning + " invalid thread id "+thread_id);
+			return;
+		}
+		int i = history.get(thread_id).size();
+		while(history.get(thread_id).size() > 0 && steps >0)
+		{
+			try {
+				stepBack(thread_id);
+				steps--;
+			//	System.out.println(nro);
+			} catch (WrongElementChannel e) {
+			
+				System.out.println("roll till");
+				rollTill(e.getDependencies());
+				}
+			 catch (ChildMissingException e) {
+				// TODO Auto-generated catch block
+				System.out.println(warning +" reversing child thread "+e.getChild());
+				rollEnd(e.getChild());
+			}
+		}
+	}
+	
 	private static String generateChanId()
 	{
 		return "chan_"+(chan_count++);
@@ -837,7 +877,8 @@ public class Debugger {
 	private static void showHelp()
 	{
 		System.out.println("\nCommands : \n\t forth (f) thread_name (executes forward one step of thread_name)");
-		System.out.println("\t back (b) thread_name (executes backward one step of thread_name)");
+		System.out.println("\t back (b) [n] thread_name (executes backward one step of thread_name) [of n steps]");
+		System.out.println("\t roll thread_name (rollsback a thread at its starting point)");
 		System.out.println("\t list (l) (displays all the available threads)");
 		System.out.println("\t print (p) id (shows the state of a thread, channel, or variable)");
 		System.out.println("\t story (h) thread_id (shows thread computational history)");
@@ -892,29 +933,29 @@ public class Debugger {
 	}
 	
 	
-	private static String printChan(ArrayList<IValue> queue)
+	private static String printChan(List<Tuple<IValue,String>> queue)
 	{
-		String ret= " [ ";
-		for (IValue val : queue) {
-			ValueType type = val.getType();
+		String ret= " [";
+		for (Tuple<IValue,String> ith : queue) {
+			ValueType type = ith.getFirst().getType();
 			if(type == ValueType.ID)
 			{
-				String xi = ((SimpleId)val).getId();
+				String xi = ((SimpleId)ith.getFirst()).getId();
 				//variable
 				if(store.get(xi)!= null)
 				{
-					ret+= store.get(xi).toString()+" ";
+					ret+= " (" + store.get(xi).toString()+" , "+ith.getSecond() +")";
 					continue;
 				}
-				ArrayList<IValue> lst = chans.get(xi).getValues();
+				List<Tuple<IValue,String>> lst = chans.get(xi).getValues();
 				if(lst != null)
 					ret += printChan(lst)+" ";
 			}
 			else
-				ret+= val.toString() + " ";
+				ret+= " (" +ith.getFirst().toString() + " , "+ith.getSecond()+")";
 		}
 //		ret= ret.substring(0, ret.length());
-		return ret+="]";
+		return ret+=" ]";
 		
 	}
 	
