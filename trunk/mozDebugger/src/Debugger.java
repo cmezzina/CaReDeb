@@ -778,7 +778,7 @@ public class Debugger {
 				int nro = stepBack(thread_id);
 				System.out.println(nro);
 			} catch (WrongElementChannel e) {
-				HashMap<String, Integer> map= e.getDependencies();
+			
 				System.out.println("roll till");
 				rollTill(e.getDependencies());
 				}
