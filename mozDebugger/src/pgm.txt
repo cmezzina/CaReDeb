@@ -1,5 +1,8 @@
 let a = true in
-	let y = proc {x} if x then skip; skip else skip end end in
-		{y a}
+	let x = port in
+		thread  {send x a} end; 
+		{send x a};
+		{send x a};
+		{send x a}
 	end
 end	
