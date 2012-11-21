@@ -52,17 +52,17 @@ public class Channel {
 		return ret.getFirst();
 	}
 	
-	//removes the head of the channel (reverse send)
+	//removes the tail of the channel (reverse send)
 	public IValue reverseSend(String thread)
 	{
 		if(value.isEmpty())
 			return null;
-		Tuple<IValue, String> head = value.getFirst();
+		Tuple<IValue, String> head = value.getLast();
 		//the head of the channel belongs to the thread
 		if(head.getSecond().equals(thread))
 		{
-			value.remove();
-			int i=pc_sender.remove();
+			value.removeLast();
+			int i=pc_sender.removeLast();
 			System.out.println(i);
 			return head.getFirst();
 		}
@@ -114,20 +114,16 @@ public class Channel {
 		for(int i =0; i < story.size(); i++)
 		{	Tuple<Tuple<IValue, String>, String> val = story.get(i);
 			String sender = val.getFirst().getSecond();
-			System.out.println("..."+ val.getFirst().getSecond());
-			if(sender.equals(thread))
-			{
 				//first occurrence
 				if(!ret.containsKey(val.getSecond()) || ret.get(val.getSecond()) > pc_reader.get(i))
-					{
-						ret.put(val.getSecond(),pc_reader.get(i));
-						System.out.println(val.getSecond() + " ... "+ret.get(val.getSecond()));
-					}
+				{
+					ret.put(val.getSecond(),pc_reader.get(i));
+				}
 				
 			//	ret.add(val.getSecond());
-				return ret;
-			}
-				ret.put(val.getSecond(), pc_reader.get(i));
+				if(sender.equals(thread))
+					break;
+				
 		}
 		return ret;
 	}
@@ -162,11 +158,18 @@ public class Channel {
 		ch.send(new SimpleId("paperino"), "t1", 2);
 		
 		
-		System.out.println(ch.getValues());	
-		System.out.println(ch.receive("t0", 1));
-		System.out.println(ch.getValues());	
-		System.out.println(ch.reverseReceive("t1") );
-		System.out.println(ch.getValues());	
+	//	System.out.println(ch.reverseSend("t1"));
+		System.out.println(ch.getValues());
+		System.out.println(ch.receive("t4",18));
+		System.out.println(ch.receive("t3",12));
+		System.out.println(ch.getReaders("t1"));
+		System.out.println(ch.reverseReceive("t4"));
+		System.out.println(ch.reverseReceive("t4"));
+		
+		System.out.println(ch.getValues());
+
+		
+		
 		
 	}
 }

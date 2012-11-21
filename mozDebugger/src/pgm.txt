@@ -2,7 +2,6 @@ let a = true in
 	let x = port in
 		thread  {send x a} end; 
 		{send x a};
-		{send x a};
 		{send x a}
 	end
 end	
