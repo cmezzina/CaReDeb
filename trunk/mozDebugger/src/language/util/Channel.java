@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 import language.value.IValue;
 import language.value.SimpleId;
@@ -87,13 +88,9 @@ public class Channel {
 	}
 	
 	//should return a pairs of value sender
-	public ArrayList<IValue> getValues()
+	public List<Tuple<IValue,String>> getValues()
 	{
-		ArrayList<IValue> ret = new ArrayList<IValue>();
-		Iterator<Tuple<IValue,String>> it = value.iterator();
-		while(it.hasNext())
-			ret.add(it.next().getFirst());
-		return ret;
+		return value;
 	}
 	
 	public ArrayList<IValue> getHistory()
