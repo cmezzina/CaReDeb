@@ -52,7 +52,7 @@ public class Debugger {
 	static int proc_count =0;
 	static int thread_count =0;
 	static int var_count=0;
-	static int pc=0;
+	static int pc=1;
 	
 	static IStatement program;
 	static String last_com="";
@@ -110,7 +110,7 @@ public class Debugger {
 				
 				last_com = command;
 				String[] cmd = command.split(" ");
-				if(cmd[0].equals("quit"))
+				if(cmd[0].equals("quit") || cmd[0].equals("q"))
 				{
 					System.out.println("*** quitting debugging");
 					return;
@@ -191,9 +191,7 @@ public class Debugger {
 								continue;
 							}
 								try {
-									if(cmd.length == 2)
-										stepBack(cmd[1]);
-									else rollNsteps(cmd[1], Integer.parseInt(cmd[2]));
+									stepBack(cmd[1]);
 									System.out.println(done);
 
 								} catch (WrongElementChannel e) {
@@ -202,6 +200,25 @@ public class Debugger {
 									// TODO Auto-generated catch block
 									System.out.println(warning+ e.getMsg());								}
 						}
+				
+						else if(cmd.length >2 && ( (cmd[0]).equals("undo ") || cmd[0].equals("u")))
+						{
+							try{
+								if(!threadlist.containsKey(cmd[1]))
+								{
+									System.out.println(warning + " invalid thread id "+cmd[1]);
+									continue;
+								}
+							
+								rollNsteps(cmd[1], Integer.parseInt(cmd[2]));
+								System.out.println(done);
+							}
+							catch(NumberFormatException e)
+							{
+								System.out.println(warning + "invalid number");
+							}
+						}
+
 						else if(cmd.length >1 && (cmd[0].equals("roll") || cmd[0].equals("r")))
 						{
 							rollEnd(cmd[1]);
@@ -789,7 +806,7 @@ public class Debugger {
 	//			System.out.println(nro);
 			} catch (WrongElementChannel e) {
 			
-				System.out.println("roll till");
+	//			System.out.println("roll till");
 				rollTill(e.getDependencies());
 				}
 			 catch (ChildMissingException e) {
@@ -802,12 +819,7 @@ public class Debugger {
 	
 	private static void rollNsteps(String thread_id, int steps)
 	{
-		if(!threadlist.containsKey(thread_id))
-		{
-			System.out.println(warning + " invalid thread id "+thread_id);
-			return;
-		}
-	
+		
 		while(history.get(thread_id).size() > 0 && steps >0)
 		{
 			try {
@@ -816,7 +828,7 @@ public class Debugger {
 			//	System.out.println(nro);
 			} catch (WrongElementChannel e) {
 			
-				System.out.println("roll till");
+	//			System.out.println("roll till");
 				rollTill(e.getDependencies());
 				}
 			 catch (ChildMissingException e) {
@@ -875,8 +887,9 @@ public class Debugger {
 	private static void showHelp()
 	{
 		System.out.println("\nCommands : \n\t forth (f) thread_name (executes forward one step of thread_name)");
-		System.out.println("\t back (b) [n] thread_name (executes backward one step of thread_name) [of n steps]");
-		System.out.println("\t roll thread_name (rollsback a thread at its starting point)");
+		System.out.println("\t back (b)  thread_name (tries to execute backward one step of thread_name)");
+		System.out.println("\t undo (u)  thread_name  n (forces backward the execution of n steps of thread_name)");
+		System.out.println("\t roll (r) thread_name (rollsback a thread at its starting point)");
 		System.out.println("\t list (l) (displays all the available threads)");
 		System.out.println("\t print (p) id (shows the state of a thread, channel, or variable)");
 		System.out.println("\t story (h) thread_id (shows thread computational history)");
