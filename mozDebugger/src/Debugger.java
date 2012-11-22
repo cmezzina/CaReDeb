@@ -221,7 +221,13 @@ public class Debugger {
 
 						else if(cmd.length >1 && (cmd[0].equals("roll") || cmd[0].equals("r")))
 						{
+							if(!threadlist.containsKey(cmd[1]))
+							{
+								System.out.println(warning + " invalid thread id "+cmd[1]);
+								continue;
+							}
 							rollEnd(cmd[1]);
+							System.out.println(done);
 						}
 						else if(cmd.length >1 && (cmd[0].equals("story") || cmd[0].equals("h")))
 						{
@@ -794,11 +800,7 @@ public class Debugger {
 	//rollbacks a thread to the beginning causing the failure of its caused actions
 	private static void rollEnd(String thread_id)
 	{
-		if(!threadlist.containsKey(thread_id))
-		{
-			System.out.println(warning + " invalid thread id "+thread_id);
-			return;
-		}
+
 		while(history.get(thread_id).size() != 0)
 		{
 			try {

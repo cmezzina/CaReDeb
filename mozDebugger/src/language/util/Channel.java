@@ -39,7 +39,7 @@ public class Channel {
 	{
 		value.add(new Tuple<IValue, String>(val, thread));
 		pc_sender.add(gamma);
-		System.out.println(" ... inserted value "+gamma +" by thread "+thread );
+//		System.out.println(" ... inserted value "+gamma +" by thread "+thread );
 	}
 	
 	public IValue receive(String thread, int gamma)
@@ -50,7 +50,7 @@ public class Channel {
 		Tuple<IValue, String> ret= value.removeFirst();
 		pc_reader.addFirst(gamma);
 		story.addFirst(new Tuple<Tuple<IValue,String>,String>(ret,thread));
-		System.out.println(" ... reading "+thread +" "+gamma );
+	//	System.out.println(" ... reading "+thread +" "+gamma );
 
 		return ret.getFirst();
 	}
