@@ -39,7 +39,7 @@ public class Channel {
 	{
 		value.add(new Tuple<IValue, String>(val, thread));
 		pc_sender.add(gamma);
-//		System.out.println(" ... inserted value "+val +" by thread "+thread );
+		System.out.println(" ... inserted value "+gamma +" by thread "+thread );
 	}
 	
 	public IValue receive(String thread, int gamma)
@@ -50,6 +50,8 @@ public class Channel {
 		Tuple<IValue, String> ret= value.removeFirst();
 		pc_reader.addFirst(gamma);
 		story.addFirst(new Tuple<Tuple<IValue,String>,String>(ret,thread));
+		System.out.println(" ... reading "+thread +" "+gamma );
+
 		return ret.getFirst();
 	}
 	
@@ -63,8 +65,9 @@ public class Channel {
 		if(head.getSecond().equals(thread))
 		{
 			value.removeLast();
-			int i=pc_sender.removeLast();
-			System.out.println(i);
+			pc_sender.removeLast();
+//			int i=pc_sender.removeLast();
+	//		System.out.println(i);
 			return head.getFirst();
 		}
 		else return null;
@@ -81,6 +84,7 @@ public class Channel {
 		if(log.getSecond().equals(thread))
 		{
 			story.remove();
+			pc_reader.remove();
 			value.addFirst(log.getFirst());
 			return true;
 		}
@@ -108,13 +112,19 @@ public class Channel {
 	{
 		HashMap<String,Integer> ret= new HashMap<String, Integer>();
 //		Iterator<Tuple<Tuple<IValue,String>,String>> it= story.iterator();
+		@SuppressWarnings("unchecked")
+		LinkedList<Integer> tmp_reader = (LinkedList<Integer>) pc_reader.clone();
+
 		for(int i =0; i < story.size(); i++)
-		{	Tuple<Tuple<IValue, String>, String> val = story.get(i);
+		{	
+			Tuple<Tuple<IValue, String>, String> val = story.get(i);
+			int gamma = tmp_reader.removeLast();
+			
 			String sender = val.getFirst().getSecond();
 				//first occurrence
-				if(!ret.containsKey(val.getSecond()) || ret.get(val.getSecond()) > pc_reader.get(i))
+				if(!ret.containsKey(val.getSecond()) || ret.get(val.getSecond()) > gamma)
 				{
-					ret.put(val.getSecond(),pc_reader.get(i));
+					ret.put(val.getSecond(),gamma);
 				}
 				
 			//	ret.add(val.getSecond());
@@ -125,11 +135,12 @@ public class Channel {
 		return ret;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public HashMap<String, Integer> getSenders(String thread)
 	{
 		HashMap<String,Integer> ret = new HashMap<String,Integer>();
 		Tuple<IValue,String> val;
-		
+		LinkedList<Integer> tmp_sender = (LinkedList<Integer>) pc_sender.clone();
 		int j = value.size()-1;
 		for(int i=j; i >=0; i--)
 		{
@@ -138,7 +149,7 @@ public class Channel {
 				return ret;
 			else
 			{
-				ret.put(val.getSecond(), pc_sender.get(i));
+				ret.put(val.getSecond(), tmp_sender.removeLast());
 			}
 		}
 		return ret;

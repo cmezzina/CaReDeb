@@ -2,8 +2,9 @@ let a = false in
 	let b = true in
 		let x = port in
 			thread  {send x a} end; 
-			{send x a};
-			{send x b}
+			let z = {receive x} in
+				{send x b}
+			end
 		end
 	end	
 end	
