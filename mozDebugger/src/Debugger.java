@@ -45,7 +45,7 @@ import expection.ChildMissingException;
 import expection.WrongElementChannel;
 public class Debugger {
 
-	static String path="C:\\Users\\aa\\workspace\\mozDebugger\\src\\pgm.txt";
+	static String path="src\\pgm.txt";
 	
 	/* counters */
 	static int chan_count =0;
@@ -66,14 +66,14 @@ public class Debugger {
 	static HashMap<String , ArrayList<IHistory>> history = new HashMap<String, ArrayList<IHistory>>();
 	
 	/***prompt messages ***/
-	static String warning="\n++";
-	static String error="\n**";
+	static String warning="\n+++";
+	static String error="\n***";
 	static String done = "...done";
 	
 	public static void main(String arg[])
 	{
 		BufferedReader cons = new BufferedReader(new InputStreamReader(System.in));
-
+		
 		if(arg.length >0)
 			path = arg[0];
 		System.out.println("reading  file  ... "+path);
@@ -86,10 +86,9 @@ public class Debugger {
 			history.put(initial, new ArrayList<IHistory>());
 			System.out.println("generated initial configuration "+ initial +"\n\n");
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
 		} catch (ParseException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		System.out.println(warning+" type help to see all the commands \n\n");
@@ -112,20 +111,21 @@ public class Debugger {
 				String[] cmd = command.split(" ");
 				if(cmd[0].equals("quit") || cmd[0].equals("q"))
 				{
-					System.out.println("*** quitting debugging");
+					System.out.println(error+"quitting debugging");
 					return;
 				}
 
 				if(cmd[0].equals("help") || cmd[0].equals("c"))
 				{
 					showHelp();
+					continue;
 				}
-				else
-					if(cmd[0].equals("store") || cmd[0].equals("s"))
+			
+				if(cmd[0].equals("store") || cmd[0].equals("s"))
 					{
 						if(store.size() == 0)
 						{
-							System.out.println("The store is empty");
+							System.out.println(warning +"empty store");
 						}
 						else
 							System.out.println("Stored ids :"+store.keySet());
@@ -191,17 +191,17 @@ public class Debugger {
 								continue;
 							}
 								try {
-									stepBack(cmd[1]);
-									System.out.println(done);
+									if(stepBack(cmd[1])>= 0)
+										System.out.println(done);
 
 								} catch (WrongElementChannel e) {
 									System.out.println(warning+ e.getMsg());
 								} catch (ChildMissingException e) {
-									// TODO Auto-generated catch block
-									System.out.println(warning+ e.getMsg());								}
+									System.out.println(warning+ e.getMsg());								
+								}
 						}
 				
-						else if(cmd.length >2 && ( (cmd[0]).equals("undo ") || cmd[0].equals("u")))
+						else if(cmd.length >2 && ( (cmd[0]).equals("undo") || cmd[0].equals("u")))
 						{
 							try{
 								if(!threadlist.containsKey(cmd[1]))
@@ -210,8 +210,10 @@ public class Debugger {
 									continue;
 								}
 							
-								rollNsteps(cmd[1], Integer.parseInt(cmd[2]));
-								System.out.println(done);
+								if(rollNsteps(cmd[1], Integer.parseInt(cmd[2])))
+									System.out.println(done);
+								else
+									System.out.println(warning + "nothing to undo");
 							}
 							catch(NumberFormatException e)
 							{
@@ -251,6 +253,32 @@ public class Debugger {
 
 
 	}
+	
+	//logs and executes all the esc in a sequence at one. Stops when there is a statement different from esc
+	private static IStatement normalize(IStatement stm, String thread_name)
+	{
+		if(stm.getType() == StatementType.ESC)
+		{
+			ArrayList<IHistory> h = history.get(thread_name);
+			h.add(new HistoryEsc());
+			history.put(thread_name, h);
+			return new Nil();
+
+		}
+		
+		
+		if(stm.getType() == StatementType.SEQUENCE)
+		{
+			Sequence seq= (Sequence)stm;
+			IStatement sx = normalize(seq.getSx(), thread_name);
+			if(sx.getType() !=StatementType.NIL)
+			{
+				return new Sequence(sx, seq.getDx());
+			}
+			else return normalize(seq.getDx(), thread_name);
+		}
+		return stm;
+	}
 
 	//forward execution
 	private static  IStatement execute(IStatement stm, String thread_name)
@@ -263,23 +291,17 @@ public class Debugger {
 			case SEQUENCE: 
 			{
 				Sequence seq = (Sequence)stm;
-				
-		
-				//avoiding executing NIL 
+
+				//executing left member of the sequence
 				IStatement sx= execute(seq.getSx(), thread_name);
 				//error --> quit
 				if(sx == null)
 					return null;
-				
+			
 				if(sx.getType() == StatementType.NIL)
 				{
-					//	h.add(new HistoryNil());
-				//		history.put(thread_name, h);
-						//return execute(seq.getDx(), thread_name);
-					if(seq.getDx().getType() == StatementType.ESC)
-							return execute(seq.getDx(), thread_name);
-					
-					return seq.getDx();
+					//logging nil in the history?
+					return normalize(seq.getDx(), thread_name);
 				}
 				seq.setSx(sx);
 				//should log this stuff
@@ -471,12 +493,11 @@ public class Debugger {
 						List<String> actual_param = call.getParams();
 						if(param.size() == actual_param.size())
 						{
+							//cloning the procedure body in order to rename it and to give it to the thread
 							IStatement body= proc_def.getBody().clone();							
 							for(int i=0; i < param.size(); i++)
 							{
 								body.rename(param.get(i), actual_param.get(i));
-								
-								//should clone the body I guess
 							
 							}
 							return new Sequence(body, new Esc());
@@ -527,7 +548,7 @@ public class Debugger {
 		if(lst.size() == 0)
 		{
 			System.out.println(warning + "empty history for thread "+thread_id);
-			return ret;
+			return -1;
 		}
 		
 		int index = lst.size()-1;
@@ -550,11 +571,6 @@ public class Debugger {
 					next = afterEsc(body);
 					new_body = beforeEsc(body);
 					new_body = new Conditional(log.getGuard(), new_body, log.getBody());
-/*					if(next == null)
-						new_body = new Conditional(log.getGuard(), new_body, log.getBody());
-					else
-						new_body = new Sequence(new Conditional(log.getGuard(), new_body, log.getBody()), new Esc());
-				*/
 				}
 				break;
 			}
@@ -575,11 +591,6 @@ public class Debugger {
 							new_body = new Assignment(log.getId(), val, new_body);
 						
 					}
-				/*	if(next != null)
-						new_body = new Sequence(new  Assignment(log.getId(), val, new_body),next);
-					else
-						new_body = new Assignment(log.getId(), val, new_body);
-				*/
 				}
 				break;
 			}
@@ -637,7 +648,7 @@ public class Debugger {
 							else
 							{
 								System.out.println(warning +" cannot revert port creation of "+log.getPort_name() +" since it is not empty");
-								return ret;
+								return -1;
 							}
 						}
 						
@@ -675,9 +686,7 @@ public class Debugger {
 						}
 						else
 						{
-							throw new ChildMissingException(" cannot revert thread creation of "+log.getThread_id() +" since it has not empty history", log.getThread_id());
-//							System.out.println(warning +" cannot revert thread creation of "+log.getThread_id() +" since it has not empty history");
-//							return;
+							throw new ChildMissingException(" cannot revert thread creation of "+log.getThread_id() +" since it has not empty history \n", log.getThread_id());
 						}
 					}
 				}
@@ -693,12 +702,12 @@ public class Debugger {
 				{
 					if(ch.isEmpty())
 						//different kind of exception ... should reverse who read the msg ..
-						throw new WrongElementChannel(" value on channel "+tmp.getId() +" does not belong to thread "+thread_id, ch.getReaders(thread_id));
+						throw new WrongElementChannel(" value on channel "+tmp.getId() +" does not belong to thread "+thread_id+"\n", ch.getReaders(thread_id));
 					IValue val =ch.reverseSend(thread_id);
 					if(val == null)
 					{
 						//System.out.println(ch.beforeThread(thread_id));
-						throw new WrongElementChannel(" value on channel "+tmp.getId() +" does not belong to thread "+thread_id, ch.getSenders(thread_id));
+						throw new WrongElementChannel(" value on channel "+tmp.getId() +" does not belong to thread "+thread_id+"\n", ch.getSenders(thread_id));
 						//System.out.println(warning +"value on channel "+tmp.getId() +" does not belong to thread "+thread_id);
 						//return;
 					}
@@ -788,7 +797,6 @@ public class Debugger {
 				} catch (WrongElementChannel e) {
 					rollTill(e.getDependencies());
 				} catch (ChildMissingException e) {
-					// TODO Auto-generated catch block
 					rollEnd(e.getChild());
 				}
 				
@@ -812,21 +820,22 @@ public class Debugger {
 				rollTill(e.getDependencies());
 				}
 			 catch (ChildMissingException e) {
-				// TODO Auto-generated catch block
-				System.out.println(warning +" reversing child thread "+e.getChild());
+				System.out.println(warning +" reversing child thread "+e.getChild() +"\n");
 				rollEnd(e.getChild());
 			}
 		}
 	}
 	
-	private static void rollNsteps(String thread_id, int steps)
+	private static boolean rollNsteps(String thread_id, int steps)
 	{
+		boolean flag = false;
 		
 		while(history.get(thread_id).size() > 0 && steps >0)
 		{
 			try {
 				stepBack(thread_id);
 				steps--;
+				flag = true;
 			//	System.out.println(nro);
 			} catch (WrongElementChannel e) {
 			
@@ -834,11 +843,11 @@ public class Debugger {
 				rollTill(e.getDependencies());
 				}
 			 catch (ChildMissingException e) {
-				// TODO Auto-generated catch block
 				System.out.println(warning +" reversing child thread "+e.getChild());
 				rollEnd(e.getChild());
 			}
 		}
+		return flag;
 	}
 	
 	private static String generateChanId()
@@ -1063,9 +1072,6 @@ public class Debugger {
 				queue.add(0,seq.getSx());
 			}
 		}
-/*		System.out.println(queue);
-		System.out.println("-->"+ build(queue));
-		*/
 		return build(rest);
 	}
 	
