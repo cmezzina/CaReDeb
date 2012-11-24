@@ -112,8 +112,8 @@ public class Channel {
 	{
 		HashMap<String,Integer> ret= new HashMap<String, Integer>();
 //		Iterator<Tuple<Tuple<IValue,String>,String>> it= story.iterator();
-		@SuppressWarnings("unchecked")
-		LinkedList<Integer> tmp_reader = (LinkedList<Integer>) pc_reader.clone();
+		//@SuppressWarnings("unchecked")
+		LinkedList<Integer> tmp_reader = new LinkedList<Integer>(pc_reader);
 
 		for(int i =0; i < story.size(); i++)
 		{	
@@ -135,12 +135,14 @@ public class Channel {
 		return ret;
 	}
 	
-	@SuppressWarnings("unchecked")
+	
 	public HashMap<String, Integer> getSenders(String thread)
 	{
 		HashMap<String,Integer> ret = new HashMap<String,Integer>();
 		Tuple<IValue,String> val;
-		LinkedList<Integer> tmp_sender = (LinkedList<Integer>) pc_sender.clone();
+	//	LinkedList<Integer> tmp_sender = (LinkedList<Integer>) pc_sender.clone();
+		LinkedList<Integer> tmp_sender = new LinkedList<Integer>(pc_sender);
+
 		int j = value.size()-1;
 		for(int i=j; i >=0; i--)
 		{

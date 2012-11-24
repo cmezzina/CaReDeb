@@ -21,7 +21,7 @@ public class Esc implements IStatement {
 	
 	public String toString()
 	{
-		//return "esc";
-		return "";
+		return "esc";
+		//return "";
 	}
 }
