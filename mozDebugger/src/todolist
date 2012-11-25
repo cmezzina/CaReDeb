@@ -1,3 +1,5 @@
 add check that all variables are bound or generate error + line ...
+better handling of new id
 command to print both story and stm of a pgm and store??
 polish code
+add more errors handling
