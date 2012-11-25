@@ -1,3 +1,14 @@
+/*******************************************************************************
+ * Copyright (c) 2012 Claudio Antares Mezzina.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Public License v3.0
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/gpl.html
+ * 
+ * Contributors:
+ *     Claudio Antares Mezzina - initial API and implementation
+ *     Ivan Lanese - implementation
+ ******************************************************************************/
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -346,29 +357,31 @@ public class Debugger {
 					case RECEIVE:
 					{
 						Receive rec = (Receive) val;
-						if(store.containsKey(rec.getFrom()))
+						String from = rec.getFrom();
+						
+						if(isChan(from))
 						{
-							String from = rec.getFrom();
 							IValue chan=store.get(from);
-							if(chan != null)
+							//consuming message
+							//this value should be saved 
+							String chanid = ((SimpleId)chan).getId();
+							Channel ch = chans.get(chanid);
+							if(ch.isEmpty())
 							{
-								//consuming message
-								//this value should be saved 
-								String chanid = ((SimpleId)chan).getId();
-							//	ArrayList<IValue> lst = chans.get(chanid);
-								Channel ch = chans.get(chanid);
-								if(ch.isEmpty())
-								{
-									System.out.println("empty channel "+from);
-									return stm;
-								}
-								System.out.println("receiving from "+from +" in "+new_id);
-								int gamma= pc++;
-								IValue received =ch.receive(thread_name, gamma);
-								store.put(new_id, received);
-								h.add(new HistoryReceive(from, new_id,gamma));
-	
+								System.out.println("empty channel "+from);
+								return stm;
 							}
+							System.out.println("receiving from "+from +" in "+new_id);
+							int gamma= pc++;
+							IValue received =ch.receive(thread_name, gamma);
+							store.put(new_id, received);
+							h.add(new HistoryReceive(from, new_id,gamma));
+						}
+						else
+						{
+							System.out.println(error + "unrecognized channel "+from);
+							System.out.println();
+							return null;
 						}
 						break;
 					}
@@ -454,10 +467,10 @@ public class Debugger {
 				IValue chan = store.get(to);
 				if(chan == null)
 				{
-					System.out.println(to + " is not recognized as channel");
+					System.out.println(error+to + " is not recognized as channel");
 					return null;
 				}
-				if(chan.getType()== ValueType.ID)
+				if(isChan(to))
 				{
 					String id = ((SimpleId)chan).getId();
 					//chans.put(id, chans.get(id).add(e))
@@ -475,8 +488,8 @@ public class Debugger {
 				}	
 				else
 				{
-					System.out.println("error "+to +"is not a channel type");
-	
+					System.out.println(error+to +" is not a channel");
+					System.out.println();
 					return null; 
 				}
 			}
@@ -995,7 +1008,7 @@ public class Debugger {
 		IValue val = null;
 		if ((val = store.get(id)) !=null)  
 		{	
-			if(val.getType()== ValueType.ID) 
+			if(val.getType() == ValueType.ID) 
 			{
 				String xi = ((SimpleId)val).getId();
 				return chans.containsKey(xi);
@@ -1113,7 +1126,7 @@ public class Debugger {
 		return build(rest);
 	}
 	
-	//bulds back a stametent (simple of sequence) from a  list
+	//builds back a statement (simple of sequence) from a  list
 	private static IStatement build(ArrayList<IStatement> queue)
 	{
 		if(queue.size() == 0)
