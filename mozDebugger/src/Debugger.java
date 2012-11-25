@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import language.history.HistoryEsc;
 import language.history.HistoryIf;
@@ -101,8 +102,6 @@ public class Debugger {
 			{
 				System.out.print("Insert command : ");
 				command = cons.readLine();
-
-				//enter is a shortcut to redo the same command
 				
 				if(command.equals("") && !last_com.equals(""))
 					command = last_com;
@@ -120,12 +119,22 @@ public class Debugger {
 					showHelp();
 					continue;
 				}
-			
+				if (cmd[0].equals("back") || cmd[0].equals("undo") ||  cmd[0].equals("roll") || cmd[0].equals("forth") ||cmd[0].equals("f") ||
+						cmd[0].equals("b") || cmd[0].equals("u") || cmd[0].equals("r") )
+				{
+					if(!threadlist.containsKey(cmd[1]))
+					{
+						System.out.println(warning+"invilid thread identifier "+ cmd[1]);
+						System.out.println();
+						continue;
+					}
+				}
 				if(cmd[0].equals("store") || cmd[0].equals("s"))
 					{
 						if(store.size() == 0)
 						{
 							System.out.println(warning +"empty store");
+							System.out.println();
 						}
 						else
 							System.out.println("Stored ids :"+store.keySet());
@@ -163,6 +172,7 @@ public class Debugger {
 									body = execute(body, cmd[1]);
 									if(body == null)
 									{
+										//should not be possible to reach this point ...
 										break;
 									}
 									threadlist.put(cmd[1], body);
@@ -172,18 +182,18 @@ public class Debugger {
 									System.out.println("thread "+cmd[1] + " has terminated");
 								}
 							}
-							else
-							{
-								System.out.println(error+"invalid thread name "+ cmd[1]+ "\n");
-							}
+						//	else
+							//{
+							//	System.out.println(error+"invalid thread name "+ cmd[1]+ "\n");
+						//	}
 						}
 						else if(cmd.length>1 && (cmd[0].equals("back") || cmd[0].equals("b")))
 						{
-							if(!threadlist.containsKey(cmd[1]))
+							/*if(!threadlist.containsKey(cmd[1]))
 							{
 								System.out.println(warning +"invalid thread identifier "+cmd[1]);
 								continue;
-							}
+							}*/
 							
 							if(!history.containsKey(cmd[1]))
 							{
@@ -204,12 +214,12 @@ public class Debugger {
 						else if(cmd.length >2 && ( (cmd[0]).equals("undo") || cmd[0].equals("u")))
 						{
 							try{
-								if(!threadlist.containsKey(cmd[1]))
+							/*	if(!threadlist.containsKey(cmd[1]))
 								{
 									System.out.println(warning + " invalid thread id "+cmd[1]);
 									continue;
 								}
-							
+							*/
 								if(rollNsteps(cmd[1], Integer.parseInt(cmd[2])))
 									System.out.println(done);
 								else
@@ -223,11 +233,11 @@ public class Debugger {
 
 						else if(cmd.length >1 && (cmd[0].equals("roll") || cmd[0].equals("r")))
 						{
-							if(!threadlist.containsKey(cmd[1]))
+							/*if(!threadlist.containsKey(cmd[1]))
 							{
 								System.out.println(warning + " invalid thread id "+cmd[1]);
 								continue;
-							}
+							}*/
 							rollEnd(cmd[1]);
 							System.out.println(done);
 						}
@@ -349,13 +359,12 @@ public class Debugger {
 								Channel ch = chans.get(chanid);
 								if(ch.isEmpty())
 								{
-									System.out.println("channel empty ");
+									System.out.println("empty channel "+from);
 									return stm;
 								}
 								System.out.println("receiving from "+from +" in "+new_id);
 								int gamma= pc++;
 								IValue received =ch.receive(thread_name, gamma);
-	//							chans.put(chanid,  lst);
 								store.put(new_id, received);
 								h.add(new HistoryReceive(from, new_id,gamma));
 	
@@ -981,28 +990,53 @@ public class Debugger {
 		
 	}
 	
+	static private boolean isChan(String id)
+	{
+		IValue val = null;
+		if ((val = store.get(id)) !=null)  
+		{	
+			if(val.getType()== ValueType.ID) 
+			{
+				String xi = ((SimpleId)val).getId();
+				return chans.containsKey(xi);
+			}
+		}
+		return false;
+	}
+	
 	static void printHistory(String id)
 	{
-		ArrayList<IHistory> h = history.get(id);
-		if(h == null)
-		{	
-			System.out.println(warning + " no history for thread "+ id);
-			return;
-		}
-		
-		if(h.size() == 0)
+		if(!history.containsKey(id) && !isChan(id))
 		{
-			System.out.println(warning +" empty history for thread "+id);
+			System.out.println(warning + " no history for identifier "+ id);
+			return;
+		
 		}
-		for (IHistory log : h) {
-			if(log.getType() != HistoryType.ESC)
-				System.out.println(log.toString());
-			
-			
+		ArrayList<IHistory> h = history.get(id);
+	
+		if(h != null)
+		{	
+			if(h.size() == 0)
+			{
+				System.out.println(warning +" empty history for thread "+id);
+			}
+			for (IHistory log : h) {
+				if(log.getType() != HistoryType.ESC)
+					System.out.println(log.toString());
+			}
+		}
+		else
+		{
+			//prints the history of a channel (if any)
+			String xi = ((SimpleId)store.get(id)).getId();
+			Channel ch = chans.get( xi);
+			if(ch.getStory().isEmpty())
+				System.out.println(warning +" empty history for channel "+id);
+			else printChanHistory(xi);
 		}
 	}
 	
-	/*static void printChanHistory(String chan_id)
+	static void printChanHistory(String chan_id)
 	{
 		Channel ch = chans.get(chan_id);
 		if(ch == null)
@@ -1011,20 +1045,24 @@ public class Debugger {
 			return;
 		}
 		
-		if(ch.chanSenderStory() == null)
+		LinkedList<Tuple<Tuple<IValue, String>, String>> h = ch.getStory();
+		Iterator<Tuple<Tuple<IValue, String>, String>> it = h.descendingIterator();
+		while(it.hasNext())
 		{
-			System.out.println(warning +" empty history for thread "+chan_id);
-		}
+			Tuple<Tuple<IValue, String>, String> ith = it.next();
+			IValue val = ith.getFirst().getFirst();
+			String tostring;
+			if(val.getType() == ValueType.ID)
+			{
+				tostring = printId( ((SimpleId)val).getId() );
+			}
+			else tostring= ith.getFirst().getFirst().toString();
+			System.out.println( "("+ tostring +" , " +ith.getFirst().getSecond() + " , "+ith.getSecond() +")");
 
-		ArrayList<IValue> val = ch.chanValueStory();
-		ArrayList<String> ids = ch.chanSenderStory();
-		int size = val.size()-1;
-		for(int i=size; i >=0; i--)
-		{
-			System.out.println("("+ids.get(i)+" , "+ val.get(i)+")");
+			
 		}
 		
-	}*/
+	}
 	
 	//there should be a better recursive implementation of this
 	
