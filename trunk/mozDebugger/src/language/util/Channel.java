@@ -91,33 +91,27 @@ public class Channel {
 			return false;
 	}
 	
-	//should return a pairs of value sender
 	public List<Tuple<IValue,String>> getValues()
 	{
 		return value;
 	}
 	
-	public ArrayList<IValue> getHistory()
+	public LinkedList<Tuple<Tuple<IValue, String>, String>> getStory()
 	{
-		ArrayList<IValue> ret = new ArrayList<IValue>();
-		Iterator<Tuple<Tuple<IValue,String>,String>> it = story.iterator();
-		while(it.hasNext())
-			ret.add(it.next().getFirst().getFirst());
-		return ret;
+		return story;
 	}
 	
-	//should be hashmap thread_id, pc
+	
 	//returns a list of readers that have to release their msg
 	public HashMap<String, Integer> getReaders(String thread)
 	{
 		HashMap<String,Integer> ret= new HashMap<String, Integer>();
-//		Iterator<Tuple<Tuple<IValue,String>,String>> it= story.iterator();
-		//@SuppressWarnings("unchecked")
+		Iterator<Tuple<Tuple<IValue,String>,String>> it= story.iterator();
 		LinkedList<Integer> tmp_reader = new LinkedList<Integer>(pc_reader);
 
-		for(int i =0; i < story.size(); i++)
+		while(it.hasNext())
 		{	
-			Tuple<Tuple<IValue, String>, String> val = story.get(i);
+			Tuple<Tuple<IValue, String>, String> val = it.next();
 			int gamma = tmp_reader.removeLast();
 			
 			String sender = val.getFirst().getSecond();
@@ -140,13 +134,11 @@ public class Channel {
 	{
 		HashMap<String,Integer> ret = new HashMap<String,Integer>();
 		Tuple<IValue,String> val;
-	//	LinkedList<Integer> tmp_sender = (LinkedList<Integer>) pc_sender.clone();
 		LinkedList<Integer> tmp_sender = new LinkedList<Integer>(pc_sender);
-
-		int j = value.size()-1;
-		for(int i=j; i >=0; i--)
+		Iterator<Tuple<IValue, String>> it = value.descendingIterator();
+		while(it.hasNext())
 		{
-			val = value.get(i);
+			val = it.next();
 			if(val.getSecond().equals(thread))
 				return ret;
 			else

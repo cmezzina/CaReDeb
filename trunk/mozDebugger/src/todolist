@@ -1,2 +1,3 @@
+add check that all variables are bound or generate error + line ...
 command to print both story and stm of a pgm and store??
 polish code
