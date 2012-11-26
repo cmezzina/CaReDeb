@@ -133,9 +133,15 @@ public class Debugger {
 				if (cmd[0].equals("back") || cmd[0].equals("undo") ||  cmd[0].equals("roll") || cmd[0].equals("forth") ||cmd[0].equals("f") ||
 						cmd[0].equals("b") || cmd[0].equals("u") || cmd[0].equals("r") )
 				{
-					if(!threadlist.containsKey(cmd[1]))
+					if(cmd.length == 2 && !threadlist.containsKey(cmd[1]))
 					{
 						System.out.println(warning+"invilid thread identifier "+ cmd[1]);
+						System.out.println();
+						continue;
+					}
+					else
+					{
+						System.out.println(warning+"missing parameter ");
 						System.out.println();
 						continue;
 					}
@@ -925,7 +931,7 @@ public class Debugger {
 		System.out.println("\t roll (r) thread_name (rollsback a thread at its starting point)");
 		System.out.println("\t list (l) (displays all the available threads)");
 		System.out.println("\t print (p) id (shows the state of a thread, channel, or variable)");
-		System.out.println("\t story (h) thread_id (shows thread computational history)");
+		System.out.println("\t story (h) id (shows thread/channel computational history)");
 		System.out.println("\t store  (s) (displays all the ids contained in the store)");
 		System.out.println("\t help  (c) (displays all commands)");
 		System.out.println("\t quit (q)\n");
