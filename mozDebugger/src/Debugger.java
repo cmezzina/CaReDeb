@@ -147,7 +147,7 @@ public class Debugger {
 					}
 				}
 				if(cmd[0].equals("store") || cmd[0].equals("s"))
-					{
+					{ 
 						if(store.size() == 0)
 						{
 							System.out.println(warning +"empty store");
