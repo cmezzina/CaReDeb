@@ -1,13 +1,3 @@
-
-let a = false in
-	let b = true in
-		let x = port in
-			thread 
-				{send z a};{send x b}			
-			end;
-			let y = {receive e} in
-					skip
-				end
-		end
-	end
-end	
+let a = true in
+	skip
+end
