@@ -83,7 +83,6 @@ public class Channel {
 			
 	}
 	
-	//augment the index
 	public boolean reverseReceive(String thread)
 	{
 		if(story.isEmpty())
@@ -111,7 +110,7 @@ public class Channel {
 	}
 	
 	
-	//returns a list of readers that have to release their msg
+	//returns a hashmap thread_id, gamma indicating that all the threads should roll till their gamma
 	public HashMap<String, Integer> getReaders(String thread)
 	{
 		HashMap<String,Integer> ret= new HashMap<String, Integer>();

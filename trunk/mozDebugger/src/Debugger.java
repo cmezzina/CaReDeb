@@ -81,7 +81,7 @@ public class Debugger {
 	
 	static HashMap<String , ArrayList<IHistory>> history = new HashMap<String, ArrayList<IHistory>>();
 	
-	/***prompt messages ***/
+	/*** prompt messages ***/
 	static String warning="\n+++";
 	static String error="\n***";
 	static String done = "...done";
@@ -1125,11 +1125,13 @@ public class Debugger {
 			//exits the loop as soon as the first esc has been found
 			if(el.getType() == StatementType.ESC)
 				break;
+			//append the element at the end of the list rest
 			if(el.getType() != StatementType.SEQUENCE)
 				rest.add(el);
 			if(el.getType()== StatementType.SEQUENCE)
 			{
 				Sequence seq = (Sequence) el;
+				//in this way the first element will be the left element
 				queue.add(0,seq.getDx());
 				queue.add(0,seq.getSx());
 			}
@@ -1137,7 +1139,7 @@ public class Debugger {
 		return build(rest);
 	}
 	
-	//builds back a statement (simple of sequence) from a  list
+	//builds back a statement (simple or sequence) from a  list
 	private static IStatement build(ArrayList<IStatement> queue)
 	{
 		if(queue.size() == 0)
