@@ -59,7 +59,7 @@ public class Channel {
 		Tuple<IValue, String> ret= value.removeFirst();
 		pc_reader.addFirst(gamma);
 		story.addFirst(new Tuple<Tuple<IValue,String>,String>(ret,thread));
-	//	System.out.println(" ... reading "+thread +" "+gamma );
+		System.out.println(" ... reading "+thread +" "+gamma );
 
 		return ret.getFirst();
 	}
@@ -123,6 +123,7 @@ public class Channel {
 			int gamma = tmp_reader.removeLast();
 			
 			String sender = val.getFirst().getSecond();
+		
 				//first occurrence
 				if(!ret.containsKey(val.getSecond()) || ret.get(val.getSecond()) > gamma)
 				{
@@ -136,7 +137,34 @@ public class Channel {
 		}
 		return ret;
 	}
-	
+	public HashMap<String, Integer> getbeforeMe(String thread)
+	{
+		//should reverse all the communication before
+		HashMap<String,Integer> ret= new HashMap<String, Integer>();
+		Iterator<Tuple<Tuple<IValue,String>,String>> it= story.iterator();
+		LinkedList<Integer> tmp_reader = new LinkedList<Integer>(pc_reader);
+
+		while(it.hasNext())
+		{	
+			Tuple<Tuple<IValue, String>, String> val = it.next();
+			int gamma = tmp_reader.remove();
+			
+			String receiver = val.getSecond();
+		
+			if(receiver.equals(thread))
+				break;
+
+				//first occurrence
+				if(!ret.containsKey(val.getSecond()) || ret.get(val.getSecond()) > gamma)
+				{
+					ret.put(val.getSecond(),gamma);
+				}
+				
+			//	ret.add(val.getSecond());
+							
+		}
+		return ret;
+	}
 	
 	public HashMap<String, Integer> getSenders(String thread)
 	{

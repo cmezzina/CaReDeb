@@ -57,7 +57,7 @@ import expection.ChildMissingException;
 import expection.WrongElementChannel;
 public class Debugger {
 
-	static String path="src\\pgm.txt";
+	static String path="src\\pgm1.txt";
 	
 	/* counters */
 	static int chan_count =0;
@@ -764,15 +764,17 @@ public class Debugger {
 				String xi = ((SimpleId)store.get(id)).getId();
 				Channel ch = chans.get(xi);
 				//putting back msg
-				ch.reverseReceive(thread_id);
-				
+				if(!ch.reverseReceive(thread_id))
+				{
+					throw new WrongElementChannel("value on channel "+id +" does not belong to thread "+thread_id+"\n", ch.getbeforeMe(thread_id));
+				}
 				//receive is an assigment
 				next = afterEsc(body);
 				new_body = beforeEsc(body);
 				new_body = new  Assignment(log.getVar(), new Receive(log.getFrom()), new_body);
 
 				//erasing variables from store
-				store.remove(log.getClass());
+				store.remove(log.getVar());
 				
 				break;
 			}
