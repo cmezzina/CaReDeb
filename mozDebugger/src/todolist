@@ -3,3 +3,6 @@ better handling of new id
 command to print both story and stm of a pgm and store??
 polish code
 add more errors handling
+sets for channels??
+better check on #params and command (out of bound exception)
+pc/gamma should be local to threads (partial order)

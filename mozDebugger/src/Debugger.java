@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
+
 import language.history.HistoryEsc;
 import language.history.HistoryIf;
 import language.history.HistoryInvoke;
@@ -43,6 +45,7 @@ import language.statement.Skip;
 import language.statement.StatementType;
 import language.statement.ThreadStm;
 import language.util.Channel;
+import language.util.DumpedConfiguration;
 import language.util.Tuple;
 import language.value.BoolValue;
 import language.value.IValue;
@@ -68,6 +71,9 @@ public class Debugger {
 	
 	static IStatement program;
 	static String last_com="";
+
+	//should be cloned I guess
+	static DumpedConfiguration dump ;
 	
 	/*stores*/
 	//variables store
@@ -134,22 +140,21 @@ public class Debugger {
 					showHelp();
 					continue;
 				}
-				if (cmd[0].equals("back") || cmd[0].equals("undo") ||  cmd[0].equals("roll") || cmd[0].equals("forth") ||cmd[0].equals("f") ||
-						cmd[0].equals("b") || cmd[0].equals("u") || cmd[0].equals("r") )
+				if(cmd[0].equals("dump") || cmd[0].equals("d"))
 				{
-					if(cmd.length > 2 && !threadlist.containsKey(cmd[1]))
-					{
-						System.out.println(warning+"invilid thread identifier "+ cmd[1]);
-						System.out.println();
-						continue;
-					}
-					
-					if(cmd.length < 2)
-					{
-						System.out.println(warning+"missing parameter ");
-						System.out.println();
-						continue;
-					}
+					dump();
+					System.out.println(".... dumped\n");
+					continue;
+				}
+				if(cmd[0].equals("restore"))
+				{
+					history = dump.getHistory();
+					procs= dump.getProcs();
+					chans = dump.getChans();
+					store = dump.getStore();
+					threadlist = dump.getThreadlist();
+					System.out.println(".... restored\n");
+					continue;
 				}
 				if(cmd[0].equals("store") || cmd[0].equals("s"))
 				{ 
@@ -160,8 +165,30 @@ public class Debugger {
 					}
 					else
 						System.out.println("Stored ids :"+store.keySet());		
+					continue;
 				}
-				else 
+			
+				if(cmd.length <2)
+				{
+					System.out.println(warning+"missing parameters for command "+cmd[0]);
+					continue;
+
+				}
+				if (cmd[0].equals("back") || cmd[0].equals("undo") ||  cmd[0].equals("roll") || cmd[0].equals("forth") ||cmd[0].equals("f") ||
+						cmd[0].equals("b") || cmd[0].equals("u") || cmd[0].equals("r") )
+				{
+					if(cmd.length > 2 && !threadlist.containsKey(cmd[1]))
+					{
+						System.out.println(warning+"invilid thread identifier "+ cmd[1]);
+						System.out.println();
+						continue;
+					}
+					
+					
+				}
+				
+				
+				 
 					if(cmd[0].equals("print") || cmd[0].equals("p"))
 					{
 						
@@ -182,7 +209,7 @@ public class Debugger {
 							System.out.println("Available threads : "+threadlist.keySet());
 						}
 					else
-						if( cmd[0].equals("forth") || cmd[0].equals("f"))
+						if( (cmd[0].equals("forth") || cmd[0].equals("f")) )
 						{
 							IStatement body = threadlist.get(cmd[1]);
 							if(body != null)
@@ -202,10 +229,10 @@ public class Debugger {
 									System.out.println("thread "+cmd[1] + " has terminated");
 								}
 							}
-						//	else
-							//{
-							//	System.out.println(error+"invalid thread name "+ cmd[1]+ "\n");
-						//	}
+							else
+							{
+								System.out.println(error+"invalid thread name "+ cmd[1]+ "\n");
+							}
 						}
 						else if(cmd[0].equals("back") || cmd[0].equals("b"))
 						{
@@ -215,6 +242,11 @@ public class Debugger {
 								continue;
 							}*/
 							
+							if(!threadlist.containsKey(cmd[1]))
+							{
+								System.out.println(warning +"invalid thread_id "+cmd[1]);
+								continue;
+							}
 							if(!history.containsKey(cmd[1]))
 							{
 								System.out.println(warning +"invalid memory for thread "+cmd[1]);
@@ -234,12 +266,12 @@ public class Debugger {
 						else if(cmd[0].equals("undo") || cmd[0].equals("u"))
 						{
 							try{
-							/*	if(!threadlist.containsKey(cmd[1]))
+								if(!threadlist.containsKey(cmd[1]))
 								{
 									System.out.println(warning + " invalid thread id "+cmd[1]);
 									continue;
 								}
-							*/
+							
 								if(rollNsteps(cmd[1], Integer.parseInt(cmd[2])))
 									System.out.println(done);
 								else
@@ -253,11 +285,11 @@ public class Debugger {
 
 						else if(cmd[0].equals("roll") || cmd[0].equals("r"))
 						{
-							/*if(!threadlist.containsKey(cmd[1]))
+							if(!threadlist.containsKey(cmd[1]))
 							{
 								System.out.println(warning + " invalid thread id "+cmd[1]);
 								continue;
-							}*/
+							}
 							rollEnd(cmd[1]);
 							System.out.println(done);
 						}
@@ -936,6 +968,9 @@ public class Debugger {
 		System.out.println("\t back (b)  thread_name (tries to execute backward one step of thread_name)");
 		System.out.println("\t undo (u)  thread_name  n (forces backward the execution of n steps of thread_name)");
 		System.out.println("\t roll (r) thread_name (rollsback a thread at its starting point)");
+		System.out.println("\t dump (d) (dumps the configuration)");
+		System.out.println("\t restore (restores a dumped configuration)");
+			
 		System.out.println("\t list (l) (displays all the available threads)");
 		System.out.println("\t print (p) id (shows the state of a thread, channel, or variable)");
 		System.out.println("\t story (h) id (shows thread/channel computational history)");
@@ -1150,5 +1185,43 @@ public class Debugger {
 			return queue.remove(0);
 		else return new Sequence (queue.remove(0), build(queue));
 			
+	}
+	
+	
+	//dump of the entire configuration
+	@SuppressWarnings("unchecked")
+	private static void dump()
+	{
+		HashMap<String, IValue> dstore=  new HashMap<String, IValue>();
+		Iterator<String> it = store.keySet().iterator();
+		String key;
+		while(it.hasNext())
+		{
+			key = it.next();
+			dstore.put(key, store.get(key).clone());
+		}
+		
+		HashMap<String, Channel> dchans =new HashMap<String, Channel>();
+		Iterator<String> itch= chans.keySet().iterator();
+		while(itch.hasNext())
+		{
+			key = itch.next();
+			dchans.put(key, chans.get(key).clone());
+		}
+		
+		
+		HashMap<String,IValue> dprocs = (HashMap<String, IValue>) procs.clone();
+		HashMap<String,IStatement> dthreadlist = (HashMap<String, IStatement>) threadlist.clone();
+		
+		HashMap<String , ArrayList<IHistory>> dhistory = new HashMap<String, ArrayList<IHistory>>();
+		Iterator<String> ith = history.keySet().iterator();
+		while(ith.hasNext())
+		{
+			key = ith.next();
+			dhistory.put(key, (ArrayList<IHistory>) history.get(key).clone());
+		}
+		
+	
+		dump = new DumpedConfiguration(dstore, dchans, dprocs, dthreadlist, dhistory);
 	}
 }

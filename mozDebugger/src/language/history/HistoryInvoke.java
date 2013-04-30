@@ -50,4 +50,8 @@ public class HistoryInvoke implements IHistory {
 		}
 		return ret+" }";
 	}
+	public IHistory clone()
+	{
+		return new HistoryInvoke(proc_name, param);
+	}
 }

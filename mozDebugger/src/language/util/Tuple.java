@@ -14,9 +14,9 @@ public class Tuple<E,V> {
 	
 	private E first;
 	private V second;
-	public Tuple(E firt, V second) {
+	public Tuple(E first, V second) {
 		super();
-		this.first = firt;
+		this.first = first;
 		this.second = second;
 	}
 	public E getFirst() {

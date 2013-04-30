@@ -36,4 +36,9 @@ public class HistoryPort implements IHistory {
 	{
 		return "new port "+port_name;
 	}
+	
+	public IHistory clone()
+	{
+		return new HistoryPort(port_name);
+	}
 }

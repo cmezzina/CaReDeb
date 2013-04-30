@@ -1,0 +1,5 @@
+let a = true in
+	let b = true in
+		thread skip;skip end ; skip
+	end
+end

@@ -42,4 +42,8 @@ public class HistorySend implements IHistory {
 		return "wrote on " + chan;
 	}
 
+	public IHistory clone()
+	{
+		return new HistorySend(chan, instruction);
+	}
 }

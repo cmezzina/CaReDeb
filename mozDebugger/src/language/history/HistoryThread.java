@@ -31,4 +31,9 @@ public class HistoryThread implements IHistory {
 	{
 		return "new thread "+thread_id;
 	}
+	
+	public IHistory clone()
+	{
+		return new HistoryThread(thread_id);
+	}
 }

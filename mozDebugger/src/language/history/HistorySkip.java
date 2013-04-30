@@ -10,6 +10,8 @@
  ******************************************************************************/
 package language.history;
 
+import language.statement.Skip;
+
 public class HistorySkip implements IHistory {
 
 	@Override
@@ -21,5 +23,8 @@ public class HistorySkip implements IHistory {
 	{
 		return "skip";
 	}
-
+	public IHistory clone()
+	{
+		return new HistorySkip();
+	}
 }
