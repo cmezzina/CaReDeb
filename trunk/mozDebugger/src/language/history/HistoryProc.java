@@ -33,4 +33,9 @@ public class HistoryProc implements IHistory {
 	{
 		return "new function "+id;
 	}
+	
+	public IHistory clone()
+	{
+		return new HistoryProc(id);
+	}
 }

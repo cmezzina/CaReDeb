@@ -22,4 +22,9 @@ public class HistoryNil implements IHistory {
 	{
 		return "nil";
 	}
+	
+	public IHistory clone()
+	{
+		return new HistoryNil();
+	}
 }

@@ -33,4 +33,9 @@ public class HistoryVar implements IHistory {
 	{
 		return "new variable "+id;
 	}
+	
+	public IHistory clone()
+	{
+		return new HistoryVar(id);
+	}
 }

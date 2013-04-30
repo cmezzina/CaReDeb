@@ -16,6 +16,7 @@ public class HistoryIf implements IHistory {
 
 	private String guard;
 	private IStatement body;
+	//indicates which part of the branch was not executed
 	private boolean left;
 	
 	public HistoryIf(String guard, IStatement body, boolean left) {
@@ -62,7 +63,10 @@ public class HistoryIf implements IHistory {
 		return HistoryType.IF;
 	}
 
-	
+	public IHistory clone()
+	{
+		return new HistoryIf(guard, body.clone(), left);
+	}
 	public String toString()
 	{
 		String ret = "if ( "+guard +" ) ";

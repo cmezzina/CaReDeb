@@ -23,11 +23,11 @@ public class Channel {
 	//the first element in the channel is the last one inserted
 	
 	//value, sender
-	private LinkedList<Tuple<IValue,String>> value;
-	private LinkedList<Integer> pc_sender;
+	protected LinkedList<Tuple<IValue,String>> value;
+	protected LinkedList<Integer> pc_sender;
 	//value, sender, receiver
-	private LinkedList<Tuple<Tuple<IValue,String>,String>> story;
-	private LinkedList<Integer> pc_reader;
+	protected LinkedList<Tuple<Tuple<IValue,String>,String>> story;
+	protected LinkedList<Integer> pc_reader;
 	
 	
 	
@@ -197,17 +197,51 @@ public class Channel {
 		
 		
 	//	System.out.println(ch.reverseSend("t1"));
-		System.out.println(ch.getValues());
+/*		System.out.println(ch.getValues());*/
+		
 		System.out.println(ch.receive("t4",18));
 		System.out.println(ch.receive("t3",12));
-		System.out.println(ch.getReaders("t1"));
-		System.out.println(ch.reverseReceive("t4"));
-		System.out.println(ch.reverseReceive("t4"));
 		
-		System.out.println(ch.getValues());
+		/*System.out.println(ch.getReaders("t1"));
+		System.out.println(ch.reverseReceive("t4"));
+		System.out.println(ch.reverseReceive("t4"));
+		*/
+		System.out.println(ch.story);
+		Channel cl = ch.clone();
+		System.out.println(cl.story);
+		
 
+	}
+	@SuppressWarnings("unchecked")
+	public Channel clone()
+	{
+		Channel ch = new Channel();
+		LinkedList<Integer> clone = (LinkedList<Integer>) this.pc_reader.clone();
+		ch.pc_reader = clone;
+		ch.pc_sender = (LinkedList<Integer>) this.pc_sender.clone();
 		
+		/*cloning channel VALUE with the SAME exact order*/
+		LinkedList<Tuple<IValue,String>> cloned_val = new LinkedList<Tuple<IValue,String>>();
+		Iterator<Tuple<IValue, String>> it = this.value.iterator();
+		while(it.hasNext())
+		{
+			Tuple<IValue, String> tp = it.next();
+			cloned_val.addLast(new Tuple<IValue, String>(tp.getFirst().clone(), tp.getSecond()));
+		}
 		
-		
+		/*cloning channel HISTORY*/
+		Iterator<Tuple<Tuple<IValue, String>, String>> iter = this.story.iterator();
+		LinkedList<Tuple<Tuple<IValue,String>,String>> cloned_story = new LinkedList<Tuple<Tuple<IValue,String>,String>>();
+
+		while(iter.hasNext())
+		{
+			Tuple<Tuple<IValue,String>,String> tp = iter.next();
+			Tuple<Tuple<IValue,String>,String> cloned = new Tuple<Tuple<IValue,String>, String>(new Tuple<IValue,String>(tp.getFirst().getFirst().clone(),
+					tp.getFirst().getSecond()), tp.getSecond());
+			cloned_story.addLast(cloned);
+		}
+		 ch.value=cloned_val;
+		 ch.story=cloned_story;
+		 return ch;
 	}
 }

@@ -72,4 +72,9 @@ public class HistoryReceive implements IHistory {
 	{
 		return "read in "+var + " from "+from;
 	}
+	
+	public IHistory clone()
+	{
+		return new HistoryReceive(from, var, instruction);
+	}
 }

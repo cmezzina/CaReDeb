@@ -23,4 +23,8 @@ public class HistoryEsc implements IHistory {
 		return "";
 	}
 
+	public IHistory clone()
+	{
+		return new HistoryEsc();
+	}
 }

@@ -10,6 +10,7 @@
  ******************************************************************************/
 package language.history;
 
-public interface IHistory {
+public interface IHistory extends Cloneable{
 	public HistoryType getType();
+	public IHistory clone();
 }
