@@ -1,5 +1,14 @@
 let a = true in
-	let b = true in
-		thread skip;skip end ; skip
+	let x = port in
+		let snd = proc {from val} {send from val};{snd from val} end
+			in
+				let rcv = proc {from} 
+					let pippo = {receive from} in {rcv from} end
+					end
+				in
+					thread {snd x a} end ;
+					thread {rcv x} end
+				end	
+			end
 	end
 end

@@ -1,8 +1,8 @@
-let a = true in
-	let b = false in
-		let x = port in
-			thread {send x a};skip;{send x b} end;
-			let y = {receive x} in skip end
-		end
-	end
+ let a = false in
+ let b = port in
+  let x = port in
+   thread  let y = {receive x} in {send y a} end end;
+   {send x b}
+  end
+ end 
 end

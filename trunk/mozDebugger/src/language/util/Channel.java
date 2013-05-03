@@ -29,14 +29,18 @@ public class Channel {
 	protected LinkedList<Tuple<Tuple<IValue,String>,String>> story;
 	protected LinkedList<Integer> pc_reader;
 	
+	static public  boolean NO_MEMORY = false;
 	
 	
 	public Channel()
 	{
 		value = new LinkedList<Tuple<IValue,String>>();
-		story = new LinkedList<Tuple<Tuple<IValue,String>,String>>();
-		pc_sender = new LinkedList<Integer>();
-		pc_reader = new LinkedList<Integer>();
+		if(!NO_MEMORY)
+		{
+			story = new LinkedList<Tuple<Tuple<IValue,String>,String>>();
+			pc_sender = new LinkedList<Integer>();
+			pc_reader = new LinkedList<Integer>();
+		}
 	}
 	
 	public boolean isEmpty()
@@ -47,7 +51,8 @@ public class Channel {
 	public void send(IValue val, String thread, int gamma)
 	{
 		value.add(new Tuple<IValue, String>(val, thread));
-		pc_sender.add(gamma);
+		if(!NO_MEMORY)
+			pc_sender.add(gamma);
 //		System.out.println(" ... inserted value "+gamma +" by thread "+thread );
 	}
 	
@@ -57,8 +62,11 @@ public class Channel {
 			return null;
 		
 		Tuple<IValue, String> ret= value.removeFirst();
-		pc_reader.addFirst(gamma);
-		story.addFirst(new Tuple<Tuple<IValue,String>,String>(ret,thread));
+		if(!NO_MEMORY)
+		{
+			pc_reader.addFirst(gamma);
+			story.addFirst(new Tuple<Tuple<IValue,String>,String>(ret,thread));
+		}
 		System.out.println(" ... reading "+thread +" "+gamma );
 
 		return ret.getFirst();
@@ -109,6 +117,12 @@ public class Channel {
 		return story;
 	}
 	
+	public boolean emptyStory()
+	{
+		if(NO_MEMORY)
+			return true;
+		return story.isEmpty();
+	}
 	
 	//returns a hashmap thread_id, gamma indicating that all the threads should roll till their gamma
 	public HashMap<String, Integer> getReaders(String thread)
