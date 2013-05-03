@@ -1,3 +1,4 @@
+
 /*******************************************************************************
  * Copyright (c) 2012 Claudio Antares Mezzina.
  * All rights reserved. This program and the accompanying materials
@@ -19,7 +20,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import language.history.HistoryEsc;
 import language.history.HistoryIf;
@@ -60,7 +60,7 @@ import expection.ChildMissingException;
 import expection.WrongElementChannel;
 public class Debugger {
 
-	static String path="src\\pgm1.txt";
+	static String path="src\\pgm.txt";
 	
 	/* counters */
 	static int chan_count =0;
@@ -87,6 +87,10 @@ public class Debugger {
 	
 	static HashMap<String , ArrayList<IHistory>> history = new HashMap<String, ArrayList<IHistory>>();
 	
+	
+	/** DEBUGGING PAMATERES**/
+	static boolean NO_MEMORY = false;
+	
 	/*** prompt messages ***/
 	static String warning="\n+++";
 	static String error="\n***";
@@ -98,7 +102,13 @@ public class Debugger {
 		
 		if(arg.length >0)
 			path = arg[0];
-		System.out.println("reading  file  ... "+path);
+	/*	if(arg.length >1)
+		{
+			boolean flag = Boolean.valueOf(arg[1]);
+			NO_MEMORY = flag;
+			Channel.NO_MEMORY = flag;
+		}*/
+			System.out.println("reading  file  ... "+path);
 		try {
 			program = mozParser.parse(new FileInputStream(path));
 			//program represents the first configuration
@@ -118,9 +128,11 @@ public class Debugger {
 				
 		String command;
 		try {
-				
+
 			while( true)
 			{
+//				System.out.println( "consumed memory : " + (float)(Runtime.getRuntime().totalMemory()- Runtime.getRuntime().freeMemory())/1024);
+
 				System.out.print("Insert command : ");
 				command = cons.readLine();
 				
@@ -305,8 +317,6 @@ public class Debugger {
 						
 			}
 
-			//System.out.println("..............");
-
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -322,9 +332,12 @@ public class Debugger {
 		if(stm.getType() == StatementType.ESC)
 		{
 			ArrayList<IHistory> h = history.get(thread_name);
-			h.add(new HistoryEsc());
-			history.put(thread_name, h);
-			return new Nil();
+			if(!NO_MEMORY)
+			{
+				h.add(new HistoryEsc());
+				history.put(thread_name, h);
+			}
+				return new Nil();
 
 		}
 		
@@ -346,8 +359,8 @@ public class Debugger {
 	private static  IStatement execute(IStatement stm, String thread_name)
 	{
 		StatementType type = stm.getType();
-		ArrayList<IHistory> h = history.get(thread_name);
-
+		ArrayList<IHistory> h = null;
+		
 		switch(type)
 		{
 			case SEQUENCE: 
@@ -374,9 +387,14 @@ public class Debugger {
 	
 				String tid = generateThreadId();
 				threadlist.put(tid, th.getBody());
-				history.put(tid, new ArrayList<IHistory>());
-				h.add(new HistoryThread(tid));
-				history.put(thread_name, h);
+				if(!NO_MEMORY)
+				{
+					h = history.get(thread_name);
+					history.put(tid, new ArrayList<IHistory>());
+					h.add(new HistoryThread(tid));
+					history.put(thread_name, h);
+
+				}
 				System.out.println("Generating thread "+ tid);
 				return new Nil();
 			}
@@ -414,7 +432,11 @@ public class Debugger {
 							int gamma= pc++;
 							IValue received =ch.receive(thread_name, gamma);
 							store.put(new_id, received);
-							h.add(new HistoryReceive(from, new_id,gamma));
+							if(!NO_MEMORY)
+							{
+								h = history.get(thread_name);
+								h.add(new HistoryReceive(from, new_id,gamma));
+							}
 						}
 						else
 						{
@@ -428,8 +450,12 @@ public class Debugger {
 							{
 								System.out.println("putting in store variable "+new_id);
 								store.put(new_id, val);
-								h.add(new HistoryVar(new_id));
-								break;
+								if(!NO_MEMORY)
+								{
+									h = history.get(thread_name);
+									h.add(new HistoryVar(new_id));
+								}
+									break;
 							}
 					case PORT:
 							{
@@ -437,7 +463,11 @@ public class Debugger {
 								System.out.println("generating channel "+ new_id +" --> "+xi);
 								store.put(new_id, new SimpleId(xi));
 								chans.put(xi, new Channel());
-								h.add(new HistoryPort(new_id));
+								if(!NO_MEMORY)
+								{
+									h = history.get(thread_name);
+									h.add(new HistoryPort(new_id));
+								}
 								break;
 							}
 					case PROCEDURE:
@@ -448,8 +478,13 @@ public class Debugger {
 								val.rename(old_id, new_id);
 								store.put(new_id, new SimpleId(lambda));
 								procs.put(lambda, val);
-								h.add(new HistoryProc(new_id));
-								break;
+								
+								if(!NO_MEMORY)
+								{
+									h = history.get(thread_name);
+									h.add(new HistoryProc(new_id));
+								}
+									break;
 							}
 					//			execute(let.getStm());
 				}
@@ -457,7 +492,8 @@ public class Debugger {
 				let.getStm().rename(old_id, new_id);
 			
 				//logging the action
-				history.put(thread_name, h);
+				if(!NO_MEMORY)
+					history.put(thread_name, h);
 				
 				//putting a trailing ESC to delimit the let scope
 				return new Sequence(let.getStm(), new Esc());			
@@ -474,13 +510,21 @@ public class Debugger {
 					if(e.getValue())
 					{
 						System.out.println("reducing to then (left) branch");
-						h.add(new HistoryIf(guard, cond.getRight(), true));
-						ret= cond.getLeft();
+						if(!NO_MEMORY)
+						{
+							h = history.get(thread_name);
+							h.add(new HistoryIf(guard, cond.getRight(), true));
+						}
+							ret= cond.getLeft();
 					}
 					else
 					{
 						System.out.println("reducing to else (right) branch");
-						h.add(new HistoryIf(guard, cond.getLeft(), false));
+						if(!NO_MEMORY)
+						{
+							h = history.get(thread_name);
+							h.add(new HistoryIf(guard, cond.getLeft(), false));
+						}
 						ret =cond.getRight();
 					}
 				}
@@ -496,7 +540,8 @@ public class Debugger {
 					}
 					return null;
 				}
-				history.put(thread_name, h);
+				if(!NO_MEMORY)
+					history.put(thread_name, h);
 				return new Sequence(ret,new Esc());
 			}
 			case SEND:
@@ -513,18 +558,23 @@ public class Debugger {
 				if(isChan(to))
 				{
 					String id = ((SimpleId)chan).getId();
+					String lookup = lookupChan(id);
 					//chans.put(id, chans.get(id).add(e))
 	
 					//IValue tosend = store.get(snd.getSub());
 					IValue tosend = new SimpleId(snd.getSub());
 					int gamma=pc++;
-					Channel tmp = chans.get(id);
+					Channel tmp = chans.get(lookup);
 					tmp.send(tosend, thread_name,gamma);
 					//chans.put(id, tmp );
 					System.out.println("sending to channel "+to);
-					h.add(new HistorySend(to,gamma));
-					history.put(thread_name, h);
-					return new Nil();
+					if(!NO_MEMORY)
+					{
+						h = history.get(thread_name);
+						h.add(new HistorySend(to,gamma));
+						history.put(thread_name, h);
+					}
+						return new Nil();
 				}	
 				else
 				{
@@ -542,9 +592,13 @@ public class Debugger {
 				{
 					System.out.println("should execute procedure "+ real_name.getId());
 					Procedure proc_def = (Procedure) procs.get(real_name.getId());
-					
-					h.add(new HistoryInvoke(call_id, call.getParams()));
-					history.put(thread_name, h);
+
+					if(!NO_MEMORY)
+					{
+						h = history.get(thread_name);
+						h.add(new HistoryInvoke(call_id, call.getParams()));
+						history.put(thread_name, h);
+					}
 					if(call.getParams().isEmpty())
 					{
 						return new Sequence(proc_def.getBody(), new Esc());
@@ -576,15 +630,24 @@ public class Debugger {
 			case SKIP:
 			{
 				System.out.println("skip");
-				h.add(new HistorySkip());
-				history.put(thread_name, h);
+				if(!NO_MEMORY)
+				{
+					h = history.get(thread_name);
+					h.add(new HistorySkip());
+					history.put(thread_name, h);
+				}
 				return new Nil();
 			}
 			case ESC:
 			{
-				h.add(new HistoryEsc());
-				history.put(thread_name, h);
-				return new Nil();
+				if(!NO_MEMORY)
+				{
+					h = history.get(thread_name);
+
+					h.add(new HistoryEsc());
+					history.put(thread_name, h);
+				}
+					return new Nil();
 			}
 			
 			case NIL:	return stm;
@@ -1059,10 +1122,36 @@ public class Debugger {
 			if(val.getType() == ValueType.ID) 
 			{
 				String xi = ((SimpleId)val).getId();
+				if(store.get(xi)!=null)
+					return isChan(xi);
+				
 				return chans.containsKey(xi);
 			}
 		}
 		return false;
+	}
+	
+	static private String lookupChan(String id)
+	{
+		
+		IValue val = null;
+		
+		if(chans.containsKey(id))
+			return id;
+		
+		if ((val = store.get(id)) !=null)  
+		{	
+			if(val.getType() == ValueType.ID) 
+			{
+				String xi = ((SimpleId)val).getId();
+				if(store.get(xi)!=null)
+					return lookupChan(xi);
+				
+				return xi;
+			}
+		}
+		
+		return null;
 	}
 	
 	static void printHistory(String id)
@@ -1089,9 +1178,10 @@ public class Debugger {
 		else
 		{
 			//prints the history of a channel (if any)
-			String xi = ((SimpleId)store.get(id)).getId();
+			
+			String xi = lookupChan(id);//((SimpleId)store.get(id)).getId();
 			Channel ch = chans.get( xi);
-			if(ch.getStory().isEmpty())
+			if(ch.emptyStory())
 				System.out.println(warning +" empty history for channel "+id);
 			else printChanHistory(xi);
 		}
@@ -1100,6 +1190,12 @@ public class Debugger {
 	static void printChanHistory(String chan_id)
 	{
 		Channel ch = chans.get(chan_id);
+		
+		if(NO_MEMORY)
+		{
+			System.out.println(warning + " empty history for channel "+ chan_id);
+			return;
+		}
 		if(ch == null)
 		{	
 			System.out.println(warning + " no history for channel "+ chan_id);
@@ -1175,6 +1271,8 @@ public class Debugger {
 		}
 		return build(rest);
 	}
+	
+	
 	
 	//builds back a statement (simple or sequence) from a  list
 	private static IStatement build(ArrayList<IStatement> queue)

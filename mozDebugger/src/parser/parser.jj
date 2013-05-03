@@ -1,10 +1,10 @@
-/** Parser for the mOZ language. Claudio Antares Mezzina*/options{  JDK_VERSION = "1.7";  static = true;
+/** Parser for the mOZ language. Claudio Antares Mezzina*/options{  JDK_VERSION = "1.6";  static = true;
    
    FORCE_LA_CHECK= true;
    LOOKAHEAD=2;} //t.beginColumn and t.beginLine for error outputting PARSER_BEGIN(mozParser) package parser;
  
 import java.io.*;
-import language.statement.*;import language.value.*;
+import language.statement.*;import language.value.*; 
 import java.util.*;
 
 public class mozParser {  	static mozParser parser = null;
