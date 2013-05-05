@@ -44,7 +44,7 @@ SKIP :{	< "/*" > : IN_COMMENT}<IN_COMMENT> SKIP :{	< "*/" > : DEFAULT	| <
 |  < PL: "(">
 |  < PR: ")">
 |  < PORT : "port">
-
+| < ISEQ : "==" >| < MUL : "*" >| < PLUS : "+" >| < MINUS : "-" >| < DIV : "/" >
 
 } 
 //identifiers
@@ -53,7 +53,7 @@ TOKEN :
   <ID:["a"-"z","A"-"Z"](["a"-"z","_","0"-"9","A"-"Z"])*>
 }
 TOKEN :{
-   < CONSTANT : (< DIGIT >)+ >| < #DIGIT : [ "0"-"9" ] >}
+//   < CONSTANT : (< DIGIT >)+ >//| < #DIGIT : [ "0"-"9" ] > < NUMBER : ["1"-"9"](["0"-"9"])*>| <ZERO  : "0" >}
 IStatement parse():{
   IStatement pgm = null; }
 {
@@ -77,7 +77,7 @@ IStatement stm_list():
  
 
 IStatement stm():
-{
+{	
   Token t;
   IValue val;
   IStatement sx = null;
@@ -168,9 +168,9 @@ IValue value():
 {
   ArrayList< String> var= null;
   IStatement stmlist = null;
-  boolean bol;
-}{
- < PROC> var=proc_var() stmlist = stm_list() < END > {
+  boolean bol;  Token t;  IntExp exp= null;  ArrayList< IntExp> lst = new ArrayList< IntExp>();
+}{
+ < PROC> var=proc_var() stmlist = stm_list() < END >  {
    return new Procedure(var, stmlist);
  }
 |
@@ -179,8 +179,8 @@ IValue value():
 | 
 	< PORT>
 	{
-	  return new PortCreation();	}}
-
+	  return new PortCreation();	}|	< ID> (int_expr())*	//variables|	< ZERO > ( int_expr())*|	t= < NUMBER >  (exp = int_expr()	{		lst.add(exp);	    System.out.println("......." + exp);	}	)*	{		if(lst.size() >0)		{			Iterator<IntExp> it = lst.iterator();			exp = new IntConst(Integer.parseInt(t.toString()));        	while(it.hasNext())			{			  	//this cast is safe                BinaryIntExp val = (BinaryIntExp)it.next();				val.setSx(exp);				exp = val;			}		}		System.out.println(exp);		return exp;	}}
+/** integer expressions **/IntExp int_expr():{  IntExp dx;}{	< PLUS > dx=number()	{		return new SumValue(null, dx);	}|	< MINUS > dx=number()	{	  return null;	}|	< DIV > dx=number()	{	  return null;	}	|	< MUL> dx=number()	{	  return null;	}}IntExp number():{  Token t;}{  	t=< NUMBER>  	{  	   	  return new IntConst(Integer.parseInt(t.toString()));  	} | 	t=< ZERO> 	{ 		 return new IntConst(0);   	}|	t =< ID>	{	  return new IntID(t.toString()); 	}}
 ArrayList< String> proc_var():
 {
   ArrayList< String> ret;}

@@ -1,0 +1,36 @@
+package language.value;
+
+public class IntID implements IntExp{
+	final static ValueType type = ValueType.CONST;
+	private String value ;
+	@Override
+	public ValueType getType() {
+		// TODO Auto-generated method stub
+		return this.type;
+	}
+
+	public IntID(String value)
+	{
+		this.value = value;
+	}
+
+	public String getValue() {
+		return value;
+	}
+
+	public void setValue(String value) {
+		this.value = value;
+	}
+
+	public IValue clone()
+	{
+		return new IntID(value);
+	}
+
+	@Override
+	public void rename(String old_id, String new_id) {
+		// TODO Auto-generated method stub
+		
+	}
+
+}

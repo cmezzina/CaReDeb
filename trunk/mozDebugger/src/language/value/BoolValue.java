@@ -47,5 +47,7 @@ public class BoolValue implements IValue {
 	{
 		return new BoolValue(value);
 	}
+
+	
 	
 }

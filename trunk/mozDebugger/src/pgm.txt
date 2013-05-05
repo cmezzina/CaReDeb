@@ -1,8 +1,3 @@
- let a = false in
- let b = port in
-  let x = port in
-   thread  let y = {receive x} in {send y a} end end;
-   {send x b}
-  end
- end 
+let a = 1+3+2 in
+	skip
 end
