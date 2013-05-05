@@ -128,7 +128,6 @@ public class Debugger {
 				
 		String command;
 		try {
-
 			while( true)
 			{
 //				System.out.println( "consumed memory : " + (float)(Runtime.getRuntime().totalMemory()- Runtime.getRuntime().freeMemory())/1024);
