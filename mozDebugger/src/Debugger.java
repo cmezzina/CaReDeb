@@ -47,12 +47,17 @@ import language.statement.ThreadStm;
 import language.util.Channel;
 import language.util.DumpedConfiguration;
 import language.util.Tuple;
+import language.value.BinaryIntExp;
 import language.value.BoolValue;
 import language.value.IValue;
+import language.value.IntConst;
+import language.value.IntExp;
+import language.value.IntID;
 import language.value.PortCreation;
 import language.value.Procedure;
 import language.value.Receive;
 import language.value.SimpleId;
+import language.value.SumValue;
 import language.value.ValueType;
 import parser.ParseException;
 import parser.mozParser;
@@ -485,7 +490,17 @@ public class Debugger {
 								}
 									break;
 							}
-					//			execute(let.getStm());
+					case SUM:
+					case CONST:
+					{
+							IntExp op = (IntExp) val;
+							int result = evaluateExp(op);
+							System.out.println(val+ " == "+ result);
+							store.put(new_id, new IntConst(result));
+							//TODO put something in the history
+							h = history.get(thread_name);
+					}
+							//			execute(let.getStm());
 				}
 				//renaming the body of a let statement
 				let.getStm().rename(old_id, new_id);
@@ -499,8 +514,11 @@ public class Debugger {
 			}
 			case IF:
 			{
+				String guard = null;
 				Conditional cond = (Conditional) stm;
-				String guard = cond.getGuard();
+				if(cond.getGuard().getType() == ValueType.ID)
+					guard = ((SimpleId)cond.getGuard()).getId();
+				
 				IValue val = store.get(guard);
 				IStatement ret =null;
 				if(val != null && val.getType() == ValueType.BOOLEAN)
@@ -696,7 +714,8 @@ public class Debugger {
 				{
 					next = afterEsc(body);
 					new_body = beforeEsc(body);
-					new_body = new Conditional(log.getGuard(), new_body, log.getBody());
+					//better check this part
+					new_body = new Conditional(new SimpleId(log.getGuard()), new_body, log.getBody());
 				}
 				break;
 			}
@@ -1153,6 +1172,25 @@ public class Debugger {
 		return null;
 	}
 	
+	//returns the id of the original variable
+	private static IValue lookupVar(String id)
+	{
+		IValue val = store.get(id);
+		
+		if(val == null)
+			return null;
+		
+		//better check on channels
+		switch (val.getType()) {
+		case ID:
+			return lookupVar( ((SimpleId)val).getId());
+		case INT_ID:
+			return lookupVar(((IntID)val).getValue());
+		default:
+			return val;
+		}
+	}
+	
 	static void printHistory(String id)
 	{
 		if(!history.containsKey(id) && !isChan(id))
@@ -1321,4 +1359,46 @@ public class Debugger {
 	
 		dump = new DumpedConfiguration(dstore, dchans, dprocs, dthreadlist, dhistory);
 	}
+
+	static int evaluateExp(IntExp exp)
+	{
+		int ret =0;
+		switch (exp.getType()) {
+		case INT_ID:
+		{
+			String id = ((IntID) exp).getValue();
+			IValue val = lookupVar(id);
+			//should not be null
+			switch (val.getType()){
+				case CONST:
+						return ((IntConst) val).getValue();
+				case SUM:
+					{
+						SumValue cast = (SumValue)val;
+						int s=evaluateExp(cast.getSx()); 
+						int d = evaluateExp(cast.getDx());
+						return s+d;
+					}
+			}
+			break;
+		}
+		case CONST:
+		{
+			return ((IntConst)exp).getValue();
+		}
+		case SUM:
+		{
+			SumValue cast = (SumValue)exp;
+			return evaluateExp(cast.getSx()) + evaluateExp(cast.getDx());
+
+		}
+
+		default:
+			break;
+		}
+		return ret;
+	}
+	
+	
 }
+

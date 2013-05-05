@@ -1,7 +1,7 @@
 package language.value;
 
 public class IntID implements IntExp{
-	final static ValueType type = ValueType.CONST;
+	final static ValueType type = ValueType.INT_ID;
 	private String value ;
 	@Override
 	public ValueType getType() {
@@ -29,8 +29,14 @@ public class IntID implements IntExp{
 
 	@Override
 	public void rename(String old_id, String new_id) {
-		// TODO Auto-generated method stub
 		
+		if(this.value.equals(old_id))
+			this.value= new_id;
+	}
+	
+	public String toString()
+	{
+		return value;
 	}
 
 }

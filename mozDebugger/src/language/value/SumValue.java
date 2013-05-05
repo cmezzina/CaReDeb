@@ -34,8 +34,8 @@ public class SumValue implements BinaryIntExp{
 	}
 	@Override
 	public void rename(String old_id, String new_id) {
-		// TODO Auto-generated method stub
-		
+		this.sx.rename(old_id, new_id);
+		this.dx.rename(old_id, new_id);
 	}
 
 	public IValue clone()
