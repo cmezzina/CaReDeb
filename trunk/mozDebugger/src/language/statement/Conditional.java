@@ -10,17 +10,19 @@
  ******************************************************************************/
 package language.statement;
 
+import language.value.IValue;
+
 public class Conditional implements IStatement {
 
 	
-
-	String guard;
+	//before a simple String
+	IValue guard;
 	IStatement left;
 	IStatement right;
-	public String getGuard() {
+	public IValue getGuard() {
 		return guard;
 	}
-	public void setGuard(String guard) {
+	public void setGuard(IValue guard) {
 		this.guard = guard;
 	}
 	public IStatement getLeft() {
@@ -35,7 +37,7 @@ public class Conditional implements IStatement {
 	public void setRight(IStatement right) {
 		this.right = right;
 	}
-	public Conditional(String guard, IStatement left, IStatement right) {
+	public Conditional(IValue guard, IStatement left, IStatement right) {
 		super();
 		this.guard = guard;
 		this.left = left;
@@ -52,10 +54,11 @@ public class Conditional implements IStatement {
 	}
 	@Override
 	public void rename(String old_id, String new_id) {
-		if(guard.equals(old_id))
+		guard.rename(old_id, new_id);
+/*		if(guard.equals(old_id))
 		{
 			guard=new_id;
-		}
+		}*/
 		left.rename(old_id, new_id);
 		right.rename(old_id, new_id);
 		return;
