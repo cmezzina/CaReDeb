@@ -48,6 +48,7 @@ import language.util.Channel;
 import language.util.DumpedConfiguration;
 import language.util.Tuple;
 import language.value.BinaryIntExp;
+import language.value.BoolExpr;
 import language.value.BoolValue;
 import language.value.IValue;
 import language.value.IntConst;
@@ -518,15 +519,40 @@ public class Debugger {
 			{
 				String guard = null;
 				Conditional cond = (Conditional) stm;
-				if(cond.getGuard().getType() == ValueType.ID)
-					guard = ((SimpleId)cond.getGuard()).getId();
-				
-				IValue val = store.get(guard);
+				boolean boolguard = false;
 				IStatement ret =null;
-				if(val != null && val.getType() == ValueType.BOOLEAN)
+				
+				if(cond.getGuard().getType() == ValueType.ID)
 				{
+					guard = ((SimpleId)cond.getGuard()).getId();
+					IValue val = store.get(guard);
 					BoolValue e = (BoolValue)val;
-					if(e.getValue())
+					if(val != null && val.getType() == ValueType.BOOLEAN)
+					{
+						boolguard=e.getValue();
+					}
+					else
+					{
+						if(val == null)
+						{
+							System.out.println(error+" undefined variable "+guard);
+						}
+						else
+						{
+							System.out.println(error+" non boolean value for "+guard);
+						}
+						return null;
+					}
+				}
+				else
+				{
+
+					boolguard  = evaluateExp((BoolExpr)cond.getGuard());
+					//it is a conditional expression
+				}
+				
+				//we should lookup it btw
+					if(boolguard)
 					{
 						System.out.println("reducing to then (left) branch");
 						if(!NO_MEMORY)
@@ -546,19 +572,8 @@ public class Debugger {
 						}
 						ret =cond.getRight();
 					}
-				}
-				else
-				{
-					if(val == null)
-					{
-						System.out.println(error+" undefined variable "+guard);
-					}
-					else
-					{
-						System.out.println(error+" non boolean value for "+guard);
-					}
-					return null;
-				}
+				
+				
 				if(!NO_MEMORY)
 					history.put(thread_name, h);
 				return new Sequence(ret,new Esc());
@@ -1362,6 +1377,25 @@ public class Debugger {
 		dump = new DumpedConfiguration(dstore, dchans, dprocs, dthreadlist, dhistory);
 	}
 
+	static boolean evaluateExp(BoolExpr exp)
+	{
+		boolean ret=false;
+		switch (exp.getOp()) {
+		case EQ:
+			 ret = (evaluateExp(exp.getSx()) == evaluateExp(exp.getDx()));
+			break;
+		case LT:
+			 ret = (evaluateExp(exp.getSx()) < evaluateExp(exp.getDx()));
+			 break;
+		case GT:
+			 ret = (evaluateExp(exp.getSx()) > evaluateExp(exp.getDx()));
+			 break;
+			
+		default:
+			break;
+		}
+		return ret;
+	}
 	static int evaluateExp(IntExp exp)
 	{
 		int ret =0;

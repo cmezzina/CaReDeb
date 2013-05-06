@@ -1,4 +1,3 @@
-
-let b =  2*2*2  in
-	skip
+let a= 5 in
+	if ( a > 4) then skip else skip end
 end
