@@ -1,8 +1,8 @@
 package language.value;
 
-public class SumValue implements BinaryIntExp{
+public class MulValue implements BinaryIntExp{
 
-	final static ValueType type = ValueType.SUM;
+	final static ValueType type = ValueType.MUL;
 	
 	private IntExp sx,dx;
 	@Override
@@ -22,16 +22,14 @@ public class SumValue implements BinaryIntExp{
 	public void setDx(IntExp dx) {
 		this.dx = dx;
 	}
-	public SumValue(IntExp sx, IntExp dx) {
+	public MulValue(IntExp sx, IntExp dx) {
 		super();
 		this.sx = sx;
 		this.dx = dx;
 	}
-	
 	public String toString()
 	{
-		return sx + " + "+ dx;
-		
+		return sx + " * "+ dx;
 	}
 	@Override
 	public void rename(String old_id, String new_id) {
@@ -42,6 +40,6 @@ public class SumValue implements BinaryIntExp{
 	public IValue clone()
 	{
 
-		return new SumValue((IntExp)sx.clone(), (IntExp)dx.clone());
+		return new MulValue((IntExp)sx.clone(), (IntExp)dx.clone());
 	}
 }
