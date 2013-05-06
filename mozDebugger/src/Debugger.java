@@ -558,7 +558,7 @@ public class Debugger {
 						if(!NO_MEMORY)
 						{
 							h = history.get(thread_name);
-							h.add(new HistoryIf(guard, cond.getRight(), true));
+							h.add(new HistoryIf(cond.getGuard(), cond.getRight(), true));
 						}
 							ret= cond.getLeft();
 					}
@@ -568,7 +568,7 @@ public class Debugger {
 						if(!NO_MEMORY)
 						{
 							h = history.get(thread_name);
-							h.add(new HistoryIf(guard, cond.getLeft(), false));
+							h.add(new HistoryIf(cond.getGuard(), cond.getLeft(), false));
 						}
 						ret =cond.getRight();
 					}
@@ -731,8 +731,8 @@ public class Debugger {
 				{
 					next = afterEsc(body);
 					new_body = beforeEsc(body);
-					//better check this part
-					new_body = new Conditional(new SimpleId(log.getGuard()), new_body, log.getBody());
+					//better check this part expecially if we need a clone ...
+					new_body = new Conditional(log.getGuard(), new_body, log.getBody());
 				}
 				break;
 			}

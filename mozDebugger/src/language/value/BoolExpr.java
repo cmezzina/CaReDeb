@@ -44,5 +44,20 @@ public class BoolExpr implements IValue{
 		return new BoolExpr((IntExp)sx.clone(), (IntExp)dx.clone(), op);
 	}
 	
+	public String toString()
+	{
+		String op=null;
+		if(this.op == BoolOp.EQ)
+			op=" == ";
+		else
+			if(this.op == BoolOp.GT)
+				op=" > ";
+		else
+			if(this.op == BoolOp.LT)
+				op=" == ";
+		return sx.toString() + op + dx.toString();
+	
+	}
+	
 	//perhaps we need an evaluate method 
 }
