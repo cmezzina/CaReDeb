@@ -53,6 +53,7 @@ import language.value.IValue;
 import language.value.IntConst;
 import language.value.IntExp;
 import language.value.IntID;
+import language.value.MulValue;
 import language.value.PortCreation;
 import language.value.Procedure;
 import language.value.Receive;
@@ -491,6 +492,7 @@ public class Debugger {
 									break;
 							}
 					case SUM:
+					case MUL:
 					case CONST:
 					{
 							IntExp op = (IntExp) val;
@@ -1379,6 +1381,13 @@ public class Debugger {
 						int d = evaluateExp(cast.getDx());
 						return s+d;
 					}
+				case MUL:
+				{
+					SumValue cast = (SumValue)val;
+					int s=evaluateExp(cast.getSx()); 
+					int d = evaluateExp(cast.getDx());
+					return s*d;
+				}
 			}
 			break;
 		}
@@ -1391,6 +1400,11 @@ public class Debugger {
 			SumValue cast = (SumValue)exp;
 			return evaluateExp(cast.getSx()) + evaluateExp(cast.getDx());
 
+		}
+		case MUL:
+		{
+			MulValue cast = (MulValue)exp;
+			return evaluateExp(cast.getSx()) * evaluateExp(cast.getDx());
 		}
 
 		default:
