@@ -11,15 +11,16 @@
 package language.history;
 
 import language.statement.IStatement;
+import language.value.IValue;
 
 public class HistoryIf implements IHistory {
 
-	private String guard;
+	private IValue guard;
 	private IStatement body;
 	//indicates which part of the branch was not executed
 	private boolean left;
 	
-	public HistoryIf(String guard, IStatement body, boolean left) {
+	public HistoryIf(IValue guard, IStatement body, boolean left) {
 		super();
 		this.guard = guard;
 		this.body = body;
@@ -27,12 +28,12 @@ public class HistoryIf implements IHistory {
 	}
 
 
-	public String getGuard() {
+	public IValue getGuard() {
 		return guard;
 	}
 
 
-	public void setGuard(String guard) {
+	public void setGuard(IValue guard) {
 		this.guard = guard;
 	}
 
@@ -69,7 +70,7 @@ public class HistoryIf implements IHistory {
 	}
 	public String toString()
 	{
-		String ret = "if ( "+guard +" ) ";
+		String ret = "if ( "+guard.toString() +" ) ";
 		if(left)
 			return ret +" then _ else "+body.toString() + " end ";
 		
