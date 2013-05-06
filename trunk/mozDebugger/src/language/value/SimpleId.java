@@ -42,7 +42,8 @@ public class SimpleId implements IValue {
 	@Override
 	public void rename(String old_id, String new_id) {
 		// TODO Auto-generated method stub
-		System.out.println("SimpleIDclass ... call rename on simple id? WHY???");
+	if(this.id.equals(old_id))
+		this.id= new_id;
 	}
 	
 	public SimpleId clone()
