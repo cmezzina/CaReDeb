@@ -66,7 +66,7 @@ public class Conditional implements IStatement {
 	
 	public Conditional clone()
 	{
-		return new Conditional(guard, left.clone(), right.clone());
+		return new Conditional(guard.clone(), left.clone(), right.clone());
 	}
 	
 }
