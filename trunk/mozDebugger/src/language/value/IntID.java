@@ -6,7 +6,7 @@ public class IntID implements IntExp{
 	@Override
 	public ValueType getType() {
 		// TODO Auto-generated method stub
-		return this.type;
+		return type;
 	}
 
 	public IntID(String value)

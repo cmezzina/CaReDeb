@@ -47,7 +47,6 @@ import language.statement.ThreadStm;
 import language.util.Channel;
 import language.util.DumpedConfiguration;
 import language.util.Tuple;
-import language.value.BinaryIntExp;
 import language.value.BoolExpr;
 import language.value.BoolValue;
 import language.value.DivValue;
