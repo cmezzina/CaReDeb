@@ -7,7 +7,7 @@ public class IntConst implements IntExp {
 	@Override
 	public ValueType getType() {
 		// TODO Auto-generated method stub
-		return this.type;
+		return type;
 	}
 
 	public IntConst(int value)
