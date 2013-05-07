@@ -1,14 +1,14 @@
-let a = true in
-	let x = port in
-		let snd = proc {from val} {send from val};{snd from val} end
-			in
-				let rcv = proc {from} 
-					let pippo = {receive from} in {rcv from} end
+let w = 1 in
+	let y = proc {n} 
+				if (n > 0) then 
+					let z = n-1  in
+						{y z} 
 					end
-				in
-					thread {snd x a} end ;
-					thread {rcv x} end
-				end	
+				else
+					skip
+				end
 			end
-	end
+		in
+		{y w}
+		end
 end

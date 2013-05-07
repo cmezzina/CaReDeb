@@ -54,7 +54,7 @@ public class BoolExpr implements IValue{
 				op=" > ";
 		else
 			if(this.op == BoolOp.LT)
-				op=" == ";
+				op=" < ";
 		return sx.toString() + op + dx.toString();
 	
 	}

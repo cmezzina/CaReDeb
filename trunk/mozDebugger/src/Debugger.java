@@ -50,6 +50,7 @@ import language.util.Tuple;
 import language.value.BinaryIntExp;
 import language.value.BoolExpr;
 import language.value.BoolValue;
+import language.value.DivValue;
 import language.value.IValue;
 import language.value.IntConst;
 import language.value.IntExp;
@@ -59,6 +60,7 @@ import language.value.PortCreation;
 import language.value.Procedure;
 import language.value.Receive;
 import language.value.SimpleId;
+import language.value.SubValue;
 import language.value.SumValue;
 import language.value.ValueType;
 import parser.ParseException;
@@ -421,14 +423,11 @@ public class Debugger {
 					case RECEIVE:
 					{
 						Receive rec = (Receive) val;
-						String from = rec.getFrom();
-						
-						if(isChan(from))
+						String from =rec.getFrom();
+						String xi = lookupChan(from);
+						if(chans.containsKey(xi))
 						{
-							IValue chan=store.get(from);
-							//consuming message
-							String chanid = ((SimpleId)chan).getId();
-							Channel ch = chans.get(chanid);
+							Channel ch = chans.get(xi);
 							if(ch.isEmpty())
 							{
 								System.out.println("empty channel "+from);
@@ -494,11 +493,13 @@ public class Debugger {
 							}
 					case SUM:
 					case MUL:
+					case DIV:
+					case SUB:
 					case CONST:
 					{
 							IntExp op = (IntExp) val;
 							int result = evaluateExp(op);
-							System.out.println(val+ " == "+ result);
+							System.out.println("putting in store variable "+new_id +" = "+result);
 							store.put(new_id, new IntConst(result));
 							//TODO put something in the history
 							h = history.get(thread_name);
@@ -525,7 +526,8 @@ public class Debugger {
 				if(cond.getGuard().getType() == ValueType.ID)
 				{
 					guard = ((SimpleId)cond.getGuard()).getId();
-					IValue val = store.get(guard);
+					
+					IValue val =  lookupVar(guard);
 					BoolValue e = (BoolValue)val;
 					if(val != null && val.getType() == ValueType.BOOLEAN)
 					{
@@ -644,7 +646,7 @@ public class Debugger {
 						if(param.size() == actual_param.size())
 						{
 							//cloning the procedure body in order to rename it and to give it to the thread
-							IStatement body= proc_def.getBody().clone();							
+							IStatement body= proc_def.getBody().clone();	
 							for(int i=0; i < param.size(); i++)
 							{
 								body.rename(param.get(i), actual_param.get(i));
@@ -1090,7 +1092,8 @@ public class Debugger {
 				case BOOLEAN:
 					//System.out.println(id + " = "+val);
 					return val.toString();
-				
+				case CONST:
+					return val.toString();
 				case ID:
 					//if ID it can be either a channel or a procedure or a variable
 					String xi = ((SimpleId)val).getId();
@@ -1110,6 +1113,7 @@ public class Debugger {
 							return printId(xi);
 						}
 					}
+					
 						
 			}
 		}
@@ -1415,9 +1419,24 @@ public class Debugger {
 						int d = evaluateExp(cast.getDx());
 						return s+d;
 					}
+				case SUB:
+				{
+					SubValue cast = (SubValue)val;
+					int s=evaluateExp(cast.getSx()); 
+					int d = evaluateExp(cast.getDx());
+					return s-d;
+				}
+				case DIV:
+				{
+					SubValue cast = (SubValue)val;
+					int s=evaluateExp(cast.getSx()); 
+					int d = evaluateExp(cast.getDx());
+					return s/d;
+				}
+		
 				case MUL:
 				{
-					SumValue cast = (SumValue)val;
+					DivValue cast = (DivValue)val;
 					int s=evaluateExp(cast.getSx()); 
 					int d = evaluateExp(cast.getDx());
 					return s*d;
@@ -1435,11 +1454,22 @@ public class Debugger {
 			return evaluateExp(cast.getSx()) + evaluateExp(cast.getDx());
 
 		}
+		case SUB:
+		{
+			SubValue cast = (SubValue)exp;
+			return evaluateExp(cast.getSx()) - evaluateExp(cast.getDx());
+		}
 		case MUL:
 		{
 			MulValue cast = (MulValue)exp;
 			return evaluateExp(cast.getSx()) * evaluateExp(cast.getDx());
 		}
+		case DIV:
+		{
+			DivValue cast = (DivValue)exp;
+			return evaluateExp(cast.getSx()) / evaluateExp(cast.getDx());
+		}
+		
 
 		default:
 			break;
