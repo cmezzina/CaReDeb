@@ -1,14 +1,13 @@
-let w = 1 in
-	let y = proc {n} 
-				if (n > 0) then 
-					let z = n-1  in
-						{y z} 
-					end
-				else
-					skip
+let  y = proc {} skip end in
+	let a = port in
+		let b = port in
+			{send a y};
+			let w = {receive a} in
+				{send b w};
+				let z = {receive b} in
+					{z }
 				end
 			end
-		in
-		{y w}
 		end
+	end
 end

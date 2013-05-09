@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-
 import language.history.HistoryEsc;
 import language.history.HistoryIf;
 import language.history.HistoryInvoke;
@@ -321,7 +320,6 @@ public class Debugger {
 							last_com = "";
 							System.out.println(error+"invalid command "+ cmd[0]+ "\n");
 						}
-						
 			}
 
 		} catch (IOException e) {
@@ -621,8 +619,11 @@ public class Debugger {
 			case INVOKE:
 			{
 				Invoke call = (Invoke)stm;
-				String call_id = call.getCallee();
-				SimpleId real_name = (SimpleId) store.get(call_id);
+				String actual_name = call.getCallee();
+				String call_id = lookupProc(call.getCallee());
+				
+				/*we should add a check to see whether the called is a proc o a simple ig e.g. a chan*/
+				SimpleId real_name = (SimpleId) store.get(call_id) ;
 				if(real_name != null && real_name.getType() == ValueType.ID)
 				{
 					System.out.println("should execute procedure "+ real_name.getId());
@@ -631,7 +632,7 @@ public class Debugger {
 					if(!NO_MEMORY)
 					{
 						h = history.get(thread_name);
-						h.add(new HistoryInvoke(call_id, call.getParams()));
+						h.add(new HistoryInvoke(actual_name, call.getParams()));
 						history.put(thread_name, h);
 					}
 					if(call.getParams().isEmpty())
@@ -728,12 +729,18 @@ public class Debugger {
 			}
 			case IF :{
 				HistoryIf log = (HistoryIf)action;
+				next = afterEsc(body);
+				new_body = beforeEsc(body);
 				if(log.isLeft())
 				{
-					next = afterEsc(body);
-					new_body = beforeEsc(body);
+					
 					//better check this part expecially if we need a clone ...
 					new_body = new Conditional(log.getGuard(), new_body, log.getBody());
+				}
+				else
+				{
+					new_body = new Conditional(log.getGuard(),  log.getBody(), new_body);
+					
 				}
 				break;
 			}
@@ -840,6 +847,7 @@ public class Debugger {
 							if(thread_body == null)
 							{
 								//this cannot happen
+						
 							}
 							new_body = new ThreadStm(thread_body);
 							next = body;
@@ -859,19 +867,20 @@ public class Debugger {
 				HistorySend log = (HistorySend)action;
 				String id = log.getChan();
 				ret = log.getInstruction();
-				SimpleId tmp = (SimpleId) store.get(id);
-				Channel ch = chans.get(tmp.getId());
+//				SimpleId tmp = (SimpleId) store.get(id);
+				String xi = lookupChan(id);
+				Channel ch = chans.get(xi);
 				if(ch !=null)
 				{
 					if(ch.isEmpty())
 						//different kind of exception ... should reverse who read the msg ..
-						throw new WrongElementChannel("value on channel "+tmp.getId() +" does not belong to thread "+thread_id+"\n", ch.getReaders(thread_id));
+						throw new WrongElementChannel("value on channel "+xi +" does not belong to thread "+thread_id+"\n", ch.getReaders(thread_id));
 					IValue val =ch.reverseSend(thread_id);
 					//if val =  null means that on the channel there is something that does not belong to the thread
 					if(val == null)
 					{
 						//System.out.println(ch.beforeThread(thread_id));
-						throw new WrongElementChannel("value on channel "+tmp.getId() +" does not belong to thread "+thread_id+"\n", ch.getSenders(thread_id));
+						throw new WrongElementChannel("value on channel "+xi +" does not belong to thread "+thread_id+"\n", ch.getSenders(thread_id));
 						//System.out.println(warning +"value on channel "+tmp.getId() +" does not belong to thread "+thread_id);
 						//return;
 					}
@@ -883,6 +892,7 @@ public class Debugger {
 						next=body;
 					}
 				}
+				
 				break;
 			}
 			case RECEIVE:
@@ -892,7 +902,9 @@ public class Debugger {
 				ret = log.getInstruction();
 
 				//lookup
-				String xi = ((SimpleId)store.get(id)).getId();
+				String xi = lookupChan(id);
+
+//				String xi = ((SimpleId)store.get(id)).getId();
 				Channel ch = chans.get(xi);
 				//putting back msg
 				if(!ch.reverseReceive(thread_id))
@@ -1211,6 +1223,28 @@ public class Debugger {
 		}
 	}
 	
+	static private String lookupProc(String id)
+	{
+		
+		IValue val = null;
+		
+		if(procs.containsKey(id))
+			return id;
+		
+		if ((val = store.get(id)) !=null)  
+		{	
+			if(val.getType() == ValueType.ID) 
+			{
+				String xi = ((SimpleId)val).getId();
+				if(store.get(xi)!=null && !procs.containsKey(xi))
+					return lookupProc(xi);
+				return id;
+			}
+		}
+		
+		return null;
+	}
+	
 	static void printHistory(String id)
 	{
 		if(!history.containsKey(id) && !isChan(id))
@@ -1476,6 +1510,22 @@ public class Debugger {
 		return ret;
 	}
 	
+	static private void printThreads()
+	{
+		Iterator<String> iterator = threadlist.keySet().iterator();
+		String key;
+		while(iterator.hasNext())
+		{
+			key=iterator.next();
+			IStatement stm = threadlist.get(key);
+			if(stm.getType()== StatementType.NIL)
+				System.out.println(key +"\tterminated");
+			else
+				System.out.println(key +"\tactive");
+					
+		}
+		
+	}
 	
 }
 
