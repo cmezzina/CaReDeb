@@ -1,11 +1,10 @@
-let  y = proc {} skip end in
-	let a = port in
-		let b = port in
-			{send a y};
-			let w = {receive a} in
-				{send b w};
-				let z = {receive b} in
-					{z }
+let a = 2   in
+	let b = port in
+		{send b a};
+		thread 
+			let y = {receive b} in
+				let w = y+2 in
+					skip
 				end
 			end
 		end
