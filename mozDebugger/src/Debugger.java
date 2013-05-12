@@ -85,6 +85,8 @@ public class Debugger {
 	/*stores*/
 	//variables store
 	static HashMap<String, IValue> store= new HashMap<String, IValue>();
+	//mapping id -> not evaluated expressions
+	static HashMap<String, IValue> expressions = new HashMap<String, IValue>();
 	//channel/port store
 	static HashMap<String, Channel> chans = new HashMap<String, Channel>();
 	//procedure store
@@ -488,6 +490,51 @@ public class Debugger {
 								}
 									break;
 							}
+					case INT_ID:
+					{
+						//alias we should infer the variable type
+						IntID var = (IntID)val;
+						IValue id = lookupVar(var.getValue());
+						//if it is a variable
+						if(id!=null)
+						{
+							//maybe cloning??
+							store.put(new_id, id);
+							System.out.println("putting in store variable "+new_id +" = "+id);
+							h = history.get(thread_name);
+
+						}
+						else
+						{
+							String xi = lookupChan(var.getValue());
+							//it is a channel
+							if(xi != null && chans.containsKey(xi))
+							{
+								store.put(new_id, new SimpleId(xi));
+								System.out.println("putting in store variable "+new_id +" = "+id);
+								h = history.get(thread_name);
+							}
+							else
+							{
+							//	xi = lookupProc(var.getValue());								
+								if(xi !=null && procs.containsKey(xi))
+								{
+									store.put(new_id, new SimpleId(xi));
+									System.out.println("putting in store variable "+new_id +" = "+id);
+									h = history.get(thread_name);
+					
+								}
+								else
+								{
+									System.out.println("SOMETHING BAD HAPPENED IN THE EXPRESSION ....");
+								}
+							}
+							
+						}
+						h.add(new HistoryVar(new_id));
+
+						break;
+					}
 					case SUM:
 					case MUL:
 					case DIV:
@@ -495,11 +542,15 @@ public class Debugger {
 					case CONST:
 					{
 							IntExp op = (IntExp) val;
+							//saving expressions 
+							expressions.put(new_id, op);
 							int result = evaluateExp(op);
 							System.out.println("putting in store variable "+new_id +" = "+result);
 							store.put(new_id, new IntConst(result));
 							//TODO put something in the history
 							h = history.get(thread_name);
+							h.add(new HistoryVar(new_id));
+
 					}
 							//			execute(let.getStm());
 				}
@@ -751,7 +802,12 @@ public class Debugger {
 				
 				if(store.containsKey(log.getId()))
 				{
-					IValue val =store.remove(log.getId());
+					IValue val = null;
+					if(expressions.containsKey(log.getId()))
+					{
+						val = expressions.remove(log.getId());
+					}	
+					else val =store.remove(log.getId());
 					
 					//probably this check is useless since it there is always an esc delimiter of the scope
 					if(body.getType() == StatementType.SEQUENCE)
@@ -1185,7 +1241,8 @@ public class Debugger {
 	{
 		
 		IValue val = null;
-		
+
+		//if it is a xi 
 		if(chans.containsKey(id))
 			return id;
 		
