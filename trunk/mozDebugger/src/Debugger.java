@@ -46,6 +46,7 @@ import language.statement.ThreadStm;
 import language.util.Channel;
 import language.util.DumpedConfiguration;
 import language.util.Tuple;
+import language.value.BinaryIntExp;
 import language.value.BoolExpr;
 import language.value.BoolValue;
 import language.value.DivValue;
@@ -321,7 +322,9 @@ public class Debugger {
 						{
 							last_com = "";
 							System.out.println(error+"invalid command "+ cmd[0]+ "\n");
+							continue;
 						}
+					printThreads();
 			}
 
 		} catch (IOException e) {
@@ -542,8 +545,9 @@ public class Debugger {
 					case CONST:
 					{
 							IntExp op = (IntExp) val;
-							//saving expressions 
-							expressions.put(new_id, op);
+							//saving expressions but consts
+							if(! isConstantExp(op))
+								expressions.put(new_id, op);
 							int result = evaluateExp(op);
 							System.out.println("putting in store variable "+new_id +" = "+result);
 							store.put(new_id, new IntConst(result));
@@ -806,6 +810,7 @@ public class Debugger {
 					if(expressions.containsKey(log.getId()))
 					{
 						val = expressions.remove(log.getId());
+						store.remove(log.getId());
 					}	
 					else val =store.remove(log.getId());
 					
@@ -1571,17 +1576,38 @@ public class Debugger {
 	{
 		Iterator<String> iterator = threadlist.keySet().iterator();
 		String key;
+		String toPrint="";
 		while(iterator.hasNext())
 		{
 			key=iterator.next();
 			IStatement stm = threadlist.get(key);
 			if(stm.getType()== StatementType.NIL)
-				System.out.println(key +"\tterminated");
+				toPrint+="(" + key +", T)  ";
 			else
-				System.out.println(key +"\tactive");
+				toPrint+="(" + key +", A)  ";
 					
 		}
-		
+		System.out.println("\nAvailable threads (Active, Terminated) : \n"+toPrint);
+		System.out.println();
+	}
+	
+	static private boolean isConstantExp(IntExp exp)
+	{
+		switch (exp.getType()) {
+		case CONST:
+					return true;
+		case SUB:
+		case SUM:
+		case DIV:
+		case MUL:
+		{
+			BinaryIntExp op = (BinaryIntExp) exp;
+			return isConstantExp(op.getSx()) && isConstantExp(op.getDx());
+		}
+		default:
+			break;
+		}
+		return false;
 	}
 	
 }
