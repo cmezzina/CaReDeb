@@ -1,12 +1,5 @@
-let a = 2   in
-	let b = port in
-		{send b a};
-		thread 
-			let y = {receive b} in
-				let w = y+2 in
-					skip
-				end
-			end
-		end
+let b = 1 in
+	let a = 2+b in
+		skip
 	end
 end
