@@ -1,5 +1,5 @@
-let b = 1 in
-	let a = 2+b in
-		skip
+let a = true in
+	let b = 2 in
+		<br>;skip
 	end
 end
