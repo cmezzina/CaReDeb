@@ -108,7 +108,8 @@ public class Debugger {
 	
 	public static void main(String arg[])
 	{
-		BufferedReader cons = new BufferedReader(new InputStreamReader(System.in));
+		BufferedReader console
+		= new BufferedReader(new InputStreamReader(System.in));
 		
 		if(arg.length >0)
 			path = arg[0];
@@ -143,7 +144,7 @@ public class Debugger {
 //				System.out.println( "consumed memory : " + (float)(Runtime.getRuntime().totalMemory()- Runtime.getRuntime().freeMemory())/1024);
 
 				System.out.print("Insert command : ");
-				command = cons.readLine();
+				command = console.readLine();
 				
 				if(command.equals("") && !last_com.equals(""))
 					command = last_com;
@@ -741,6 +742,7 @@ public class Debugger {
 					return new Nil();
 			}
 			
+			case BREAK:
 			case NIL:	return stm;
 		
 		}
@@ -1476,6 +1478,7 @@ public class Debugger {
 		dump = new DumpedConfiguration(dstore, dchans, dprocs, dthreadlist, dhistory);
 	}
 
+	
 	static boolean evaluateExp(BoolExpr exp)
 	{
 		boolean ret=false;
@@ -1495,6 +1498,7 @@ public class Debugger {
 		}
 		return ret;
 	}
+	
 	static int evaluateExp(IntExp exp)
 	{
 		int ret =0;
@@ -1608,6 +1612,34 @@ public class Debugger {
 			break;
 		}
 		return false;
+	}
+	
+	
+	//decides whether a thread can move forward : always true but when it is reading on an empty channel or it has already terminated (nil statement)
+	static private boolean canMove(IStatement stm)
+	{
+		switch (stm.getType()) {
+		case LET:
+				IValue val = ((Assignment)stm).getV();
+				if(val.getType() == ValueType.RECEIVE)
+				{
+					Receive rec = (Receive) val;
+					String from =rec.getFrom();
+					String xi = lookupChan(from);
+					if(chans.containsKey(xi))
+					{
+						Channel ch = chans.get(xi);
+						return !ch.isEmpty();
+					}
+				}
+				else return true;
+			
+		case NIL: return false;
+
+		default:
+			return true;
+		}
+
 	}
 	
 }
