@@ -156,7 +156,12 @@ public class Debugger {
 					System.out.println(error+"quitting debugging");
 					return;
 				}
-
+				
+				if(cmd[0].equals("run"))
+				{
+					run();
+					continue;
+				}
 				if(cmd[0].equals("help") || cmd[0].equals("c"))
 				{
 					showHelp();
@@ -337,6 +342,40 @@ public class Debugger {
 
 	}
 	
+	//first attempt of scheduler 
+	private static boolean allStopped()
+	{
+		Iterator<String> it = threadlist.keySet().iterator();
+		IStatement stm=null;
+		while(it.hasNext())
+		{
+			stm = threadlist.get(it.next());
+			if(canMove(stm))
+				return false;
+		}
+		return true;
+	}
+	
+	public static void run()
+	{
+		while(!allStopped())
+		{
+			Iterator<String> it = threadlist.keySet().iterator();
+			IStatement stm=null;
+			String t_id = null;
+			while(it.hasNext())
+			{
+				t_id = it.next();
+				stm = threadlist.get(t_id);
+				if(canMove(stm))
+				{
+					stm = execute(threadlist.get(t_id), t_id);
+					threadlist.put(t_id, stm);
+				}
+			}
+			
+		}
+	}
 	//logs and executes all the esc in a sequence at once. Stops when there is a statement different from esc
 	private static IStatement normalize(IStatement stm, String thread_name)
 	{
@@ -1633,7 +1672,7 @@ public class Debugger {
 					}
 				}
 				else return true;
-			
+		case BREAK:
 		case NIL: return false;
 
 		default:
