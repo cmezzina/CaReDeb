@@ -1,10 +1,9 @@
-let a = true in
-	let b = 2 in
-		skip;
+let b = 2 in
 		thread 
 			let a = b in
 				skip
 			end
 		end
+		;
+		<br>
 	end
-end

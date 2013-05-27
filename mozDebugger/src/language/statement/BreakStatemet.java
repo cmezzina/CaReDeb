@@ -18,4 +18,9 @@ public class BreakStatemet implements IStatement {
 	{
 		return new BreakStatemet();
 	}
+	
+	public String toString()
+	{
+		return "breakpoint";
+	}
 }
