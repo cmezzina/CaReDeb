@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+
+import language.history.HistoryBreak;
 import language.history.HistoryEsc;
 import language.history.HistoryIf;
 import language.history.HistoryInvoke;
@@ -33,6 +35,7 @@ import language.history.HistoryType;
 import language.history.HistoryVar;
 import language.history.IHistory;
 import language.statement.Assignment;
+import language.statement.BreakStatemet;
 import language.statement.Conditional;
 import language.statement.Esc;
 import language.statement.IStatement;
@@ -64,6 +67,7 @@ import language.value.SumValue;
 import language.value.ValueType;
 import parser.ParseException;
 import parser.mozParser;
+import expection.BreakPointException;
 import expection.ChildMissingException;
 import expection.WrongElementChannel;
 public class Debugger {
@@ -243,7 +247,12 @@ public class Debugger {
 							{
 								if(body.getType() != StatementType.NIL )
 								{
-									body = execute(body, cmd[1]);
+									try {
+										body = execute(body, cmd[1]);
+									} catch (BreakPointException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
 									if(body == null)
 									{
 										//should not be possible to reach this point ...
@@ -369,13 +378,22 @@ public class Debugger {
 				stm = threadlist.get(t_id);
 				if(canMove(stm))
 				{
-					stm = execute(threadlist.get(t_id), t_id);
+					try {
+						stm = execute(threadlist.get(t_id), t_id);
+					} catch (BreakPointException e) {
+					
+						stm = normalize(e.getStm(), t_id);
+						System.out.println(warning +" breakpoint reached at thread "+ t_id);
+						threadlist.put(t_id, stm);
+						return;
+					}
 					threadlist.put(t_id, stm);
 				}
 			}
 			
 		}
 	}
+	
 	//logs and executes all the esc in a sequence at once. Stops when there is a statement different from esc
 	private static IStatement normalize(IStatement stm, String thread_name)
 	{
@@ -406,7 +424,7 @@ public class Debugger {
 	}
 
 	//executes one step forward of a given thread
-	private static  IStatement execute(IStatement stm, String thread_name)
+	private static  IStatement execute(IStatement stm, String thread_name) throws BreakPointException
 	{
 		StatementType type = stm.getType();
 		ArrayList<IHistory> h = null;
@@ -418,8 +436,18 @@ public class Debugger {
 				Sequence seq = (Sequence)stm;
 
 				//executing left member of the sequence
-				IStatement sx= execute(seq.getSx(), thread_name);
-				//error --> quit
+				IStatement sx= null;
+				boolean rethrow = false;
+				try{
+					sx= execute(seq.getSx(), thread_name);
+							
+				}
+				catch (BreakPointException e) {
+					// we are sure it is a single stm break
+					sx = e.getStm();
+					rethrow = true;
+				}
+					//it is a sequence with on top a breakpoint
 				if(sx == null)
 					return null;
 				
@@ -428,9 +456,18 @@ public class Debugger {
 				{
 					return normalize(seq.getDx(), thread_name);
 				}
+				
+				if(rethrow)
+				{
+					if(sx.getType() == StatementType.BREAK)
+						sx = normalize(seq.getDx(), thread_name);
+					throw new BreakPointException(sx);
+				}
 				seq.setSx(sx);
 				return seq;
+				
 			}
+				
 			case SPAWN:
 			{
 				ThreadStm th = (ThreadStm)stm;
@@ -781,7 +818,12 @@ public class Debugger {
 					return new Nil();
 			}
 			
-			case BREAK:
+			case BREAK: {
+						h = history.get(thread_name);
+						h.add(new HistoryBreak());
+						history.put(thread_name, h);
+							throw new BreakPointException(stm);
+			}	
 			case NIL:	return stm;
 		
 		}
@@ -820,6 +862,14 @@ public class Debugger {
 					new_body = new Skip();
 				else{
 					new_body = new Sequence(new Skip(), body);
+				}
+				break;
+			}
+			case BREAK: {
+				if(body.getType() == StatementType.NIL)
+					new_body = new BreakStatemet();
+				else{
+					new_body = new Sequence(new BreakStatemet(), body);
 				}
 				break;
 			}
@@ -1031,6 +1081,7 @@ public class Debugger {
 				new_body = new Invoke(log.getProc_name(), log.getParam());
 				break;
 			}
+			
 			case ESC:
 			{
 				new_body = new Esc();
@@ -1672,7 +1723,6 @@ public class Debugger {
 					}
 				}
 				else return true;
-		case BREAK:
 		case NIL: return false;
 
 		default:

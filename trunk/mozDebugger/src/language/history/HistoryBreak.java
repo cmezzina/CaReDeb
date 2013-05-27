@@ -6,7 +6,7 @@ public class HistoryBreak implements IHistory {
 	@Override
 	public HistoryType getType() {
 		// TODO Auto-generated method stub
-		return null;
+		return type;
 	}
 	
 	public HistoryBreak clone()
