@@ -11,6 +11,7 @@
  *     Ivan Lanese - implementation
  ******************************************************************************/
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -72,7 +73,7 @@ import expection.ChildMissingException;
 import expection.WrongElementChannel;
 public class Debugger {
 
-	static String path="src\\pgm.txt";
+	static String path="";
 	
 	/* counters */
 	static int chan_count =0;
@@ -117,14 +118,25 @@ public class Debugger {
 		
 		if(arg.length >0)
 			path = arg[0];
+		else
+		{
+			System.out.println(error + " missing program_file parameter");
+			return;
+		}
 	/*	if(arg.length >1)
 		{
 			boolean flag = Boolean.valueOf(arg[1]);
 			NO_MEMORY = flag;
 			Channel.NO_MEMORY = flag;
 		}*/
-			System.out.println("reading  file  ... "+path);
 		try {
+			File f = new File(path);
+			if(!f.exists())
+			{
+				System.out.println(error + " undefined file "+ path);
+				return;
+			}
+			System.out.println("reading  file  ... "+path);
 			program = mozParser.parse(new FileInputStream(path));
 			//program represents the first configuration
 			
@@ -161,7 +173,7 @@ public class Debugger {
 					return;
 				}
 				
-				if(cmd[0].equals("run"))
+				if(cmd[0].equals("run") || cmd[0].equals("r"))
 				{
 					run();
 					continue;
@@ -198,7 +210,13 @@ public class Debugger {
 						System.out.println("Stored ids :"+store.keySet());		
 					continue;
 				}
-			
+				else
+					if(cmd[0].equals("list") || cmd[0].equals("l"))
+					{
+					//	System.out.println("Available threads : "+threadlist.keySet());
+						printThreads();
+						continue;
+					}
 				if(cmd.length <2)
 				{
 					System.out.println(warning+"missing parameters for command "+cmd[0]);
@@ -234,11 +252,7 @@ public class Debugger {
 							System.out.println(cmd[1]+ " = "+toprint);
 						}
 					}
-					else
-						if(cmd[0].equals("list") || cmd[0].equals("l"))
-						{
-							System.out.println("Available threads : "+threadlist.keySet());
-						}
+					
 					else
 						if( (cmd[0].equals("forth") || cmd[0].equals("f")) )
 						{
@@ -251,7 +265,8 @@ public class Debugger {
 										body = execute(body, cmd[1]);
 									} catch (BreakPointException e) {
 										// TODO Auto-generated catch block
-										e.printStackTrace();
+										System.out.println("breakpoint reached at "+ cmd[1]);
+										body = e.getStm();
 									}
 									if(body == null)
 									{
@@ -367,18 +382,26 @@ public class Debugger {
 	
 	public static void run()
 	{
+		boolean recall = false;
+
 		while(!allStopped())
 		{
 			Iterator<String> it = threadlist.keySet().iterator();
 			IStatement stm=null;
 			String t_id = null;
+			iteratorLoop:
 			while(it.hasNext())
 			{
+				int size = threadlist.size();
 				t_id = it.next();
+
 				stm = threadlist.get(t_id);
 				if(canMove(stm))
 				{
+					System.out.println(" executing "+t_id);
+
 					try {
+				
 						stm = execute(threadlist.get(t_id), t_id);
 					} catch (BreakPointException e) {
 					
@@ -388,10 +411,17 @@ public class Debugger {
 						return;
 					}
 					threadlist.put(t_id, stm);
+					if(threadlist.size() > size)
+					{
+						recall = true;
+						break iteratorLoop;
+					}	
+					
 				}
 			}
 			
 		}
+		System.out.println(warning + " all threads are terminated\n");
 	}
 	
 	//logs and executes all the esc in a sequence at once. Stops when there is a statement different from esc
@@ -452,15 +482,20 @@ public class Debugger {
 					return null;
 				
 				//if the left element has finished = Nil then we have to normalize the right one
-				if(sx.getType() == StatementType.NIL)
+				if(sx.getType() == StatementType.NIL && !rethrow)
 				{
 					return normalize(seq.getDx(), thread_name);
 				}
 				
 				if(rethrow)
 				{
-					if(sx.getType() == StatementType.BREAK)
+					if(sx.getType() == StatementType.NIL)
 						sx = normalize(seq.getDx(), thread_name);
+					else
+					{
+						seq.setSx(sx);
+						sx = seq;
+					}
 					throw new BreakPointException(sx);
 				}
 				seq.setSx(sx);
@@ -822,7 +857,7 @@ public class Debugger {
 						h = history.get(thread_name);
 						h.add(new HistoryBreak());
 						history.put(thread_name, h);
-							throw new BreakPointException(stm);
+							throw new BreakPointException(new Nil());
 			}	
 			case NIL:	return stm;
 		
@@ -908,6 +943,7 @@ public class Debugger {
 					//probably this check is useless since it there is always an esc delimiter of the scope
 					if(body.getType() == StatementType.SEQUENCE)
 					{
+							
 							next = afterEsc(body);
 							new_body = beforeEsc(body);
 							new_body = new Assignment(log.getId(), val, new_body);
@@ -1232,8 +1268,10 @@ public class Debugger {
 		System.out.println("\t back (b)  thread_name (tries to execute backward one step of thread_name)");
 		System.out.println("\t undo (u)  thread_name  n (forces backward the execution of n steps of thread_name)");
 		System.out.println("\t roll (r) thread_name (rollsback a thread at its starting point)");
+		System.out.println("\t run (r) (runs the program till the first breaktpoint or eventually terminates the execution)");
 		System.out.println("\t dump (d) (dumps the configuration)");
 		System.out.println("\t restore (restores a dumped configuration)");
+		
 			
 		System.out.println("\t list (l) (displays all the available threads)");
 		System.out.println("\t print (p) id (shows the state of a thread, channel, or variable)");
@@ -1469,6 +1507,29 @@ public class Debugger {
 	//there should be a better recursive implementation of this
 	
 	//return the rest of a statement sequence after the FIRST ESC
+	
+	private static boolean containEsc(IStatement stm)
+	{
+		ArrayList<IStatement> queue = new ArrayList<IStatement>();
+		queue.add(stm);
+		while(true)
+		{
+			if(queue.isEmpty())
+				return false;
+			IStatement el = queue.remove(0);
+			//exits the loop as soon as the first esc has been found
+			if(el.getType() == StatementType.ESC)
+				break;
+			if(el.getType()== StatementType.SEQUENCE)
+			{
+				Sequence seq = (Sequence) el;
+				queue.add(0,seq.getDx());
+				queue.add(0,seq.getSx());
+			}
+		}
+		return true;
+		
+	}
 	private static IStatement afterEsc(IStatement stm)
 	{
 		ArrayList<IStatement> queue = new ArrayList<IStatement>();

@@ -14,4 +14,8 @@ public class HistoryBreak implements IHistory {
 		return new HistoryBreak();
 	}
 
+	public String toString()
+	{
+		return "breakpoint";
+	}
 }
