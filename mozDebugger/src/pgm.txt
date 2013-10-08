@@ -1,39 +1,5 @@
  let t = true in
-     let f = false in
-         let num = 2 in
-             let a = port in
-                 let b = port in
-                     let c = port in
-                         let d = port in
-                             let e = port in
-                                 let checkCr = proc {z} {send z f} end in
-                                     let checkAdd = proc {w} {send w t} end in
-                                         let checkIt = proc {u} {send u t} end in 
-                                             let and = proc {n x y} 
-                                                           if (n>0) then let k={receive x} in
-                                                                             let v={receive k} in 
-                                                                                 let m = n-1 in
-                                                                                     if v then {and m x y} 
-                                                                                     else {send y f} end
-                                                                                 end 
-                                                                             end
-                                                                         end
-                                                                    else {send y t} end 
-                                                       end
-                                             in 
-                                                 thread {and num a b} end;
-                                                 thread {send a c};{checkCr c} end;
-                                                 thread {send a d};{checkAdd d} end;
-                                                 thread {send a e};{checkIt e} end
-                                             end
-                                         end
-                                     end
-                                 end
-                             end
-                         end
-                     end
-                 end
-             end
-        end 
-    end
+     let x = port in
+     	thread {send t x} end;
+     	{send t x};{send t x}
 end
