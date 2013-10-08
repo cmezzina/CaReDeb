@@ -102,12 +102,16 @@ public class Debugger {
 	
 	static HashMap<String , ArrayList<IHistory>> history = new HashMap<String, ArrayList<IHistory>>();
 	
+	//mapping child t_id -- (father t_id -- gamma)
+	static HashMap<String,Tuple<String,Integer>> parenthood = new HashMap<String, Tuple<String, Integer>>();
+	
+	static HashMap<String,Tuple<String,Integer>> variables = new HashMap<String, Tuple<String, Integer>>();
 	
 	/** DEBUGGING PAMATERES**/
 	static boolean NO_MEMORY = false;
 	
 	/*** prompt messages ***/
-	static String warning="\n+++";
+	static String warning="+++";
 	static String error="\n***";
 	static String done = "...done";
 	
@@ -173,7 +177,7 @@ public class Debugger {
 					return;
 				}
 				
-				if(cmd[0].equals("run") || cmd[0].equals("r"))
+				if(cmd[0].equals("run"))
 				{
 					run();
 					continue;
@@ -203,7 +207,7 @@ public class Debugger {
 				{ 
 					if(store.size() == 0)
 					{
-						System.out.println(warning +"empty store");
+						System.out.println(warning +"empty store\n");
 						System.out.println();
 					}
 					else
@@ -219,7 +223,7 @@ public class Debugger {
 					}
 				if(cmd.length <2)
 				{
-					System.out.println(warning+"missing parameters for command "+cmd[0]);
+					System.out.println(warning+"missing parameters for command "+cmd[0]+"\n");
 					continue;
 
 				}
@@ -228,7 +232,7 @@ public class Debugger {
 				{
 					if(cmd.length > 2 && !threadlist.containsKey(cmd[1]))
 					{
-						System.out.println(warning+"invilid thread identifier "+ cmd[1]);
+						System.out.println(warning+"invilid thread identifier "+ cmd[1]+"\n");
 						System.out.println();
 						continue;
 					}
@@ -295,12 +299,12 @@ public class Debugger {
 							
 							if(!threadlist.containsKey(cmd[1]))
 							{
-								System.out.println(warning +"invalid thread_id "+cmd[1]);
+								System.out.println(warning +"invalid thread_id "+cmd[1]+"\n");
 								continue;
 							}
 							if(!history.containsKey(cmd[1]))
 							{
-								System.out.println(warning +"invalid memory for thread "+cmd[1]);
+								System.out.println(warning +"invalid memory for thread "+cmd[1]+"\n");
 								continue;
 							}
 								try {
@@ -319,26 +323,40 @@ public class Debugger {
 							try{
 								if(!threadlist.containsKey(cmd[1]))
 								{
-									System.out.println(warning + " invalid thread id "+cmd[1]);
+									System.out.println(warning + " invalid thread id "+cmd[1]+"\n");
 									continue;
 								}
 							
 								if(rollNsteps(cmd[1], Integer.parseInt(cmd[2])))
 									System.out.println(done);
 								else
-									System.out.println(warning + "nothing to undo");
+									System.out.println(warning + "nothing to undo\n");
 							}
 							catch(NumberFormatException e)
 							{
-								System.out.println(warning + "invalid number");
+								System.out.println(warning + "invalid number\n");
 							}
 						}
-
+						else if(cmd[0].equals("destroythread") || cmd[0].equals("dt"))
+						{
+								if(!threadlist.containsKey(cmd[1]))
+								{
+									System.out.println(warning + " invalid thread id "+cmd[1]+"\n");
+									continue;
+								}
+								destroyThread(cmd[1]);
+						}
+					
+						else if(cmd[0].equals("destroyvar") || cmd[0].equals("dv"))
+						{
+								destroyLet(cmd[1]);
+						}
+					
 						else if(cmd[0].equals("roll") || cmd[0].equals("r"))
 						{
 							if(!threadlist.containsKey(cmd[1]))
 							{
-								System.out.println(warning + " invalid thread id "+cmd[1]);
+								System.out.println(warning + " invalid thread id "+cmd[1]+"\n");
 								continue;
 							}
 							rollEnd(cmd[1]);
@@ -382,8 +400,6 @@ public class Debugger {
 	
 	public static void run()
 	{
-		boolean recall = false;
-
 		while(!allStopped())
 		{
 			Iterator<String> it = threadlist.keySet().iterator();
@@ -406,14 +422,13 @@ public class Debugger {
 					} catch (BreakPointException e) {
 					
 						stm = normalize(e.getStm(), t_id);
-						System.out.println(warning +" breakpoint reached at thread "+ t_id);
+						System.out.println(warning +" breakpoint reached at thread "+ t_id+"\n");
 						threadlist.put(t_id, stm);
 						return;
 					}
 					threadlist.put(t_id, stm);
 					if(threadlist.size() > size)
 					{
-						recall = true;
 						break iteratorLoop;
 					}	
 					
@@ -506,14 +521,17 @@ public class Debugger {
 			case SPAWN:
 			{
 				ThreadStm th = (ThreadStm)stm;
-	
+				
 				String tid = generateThreadId();
 				threadlist.put(tid, th.getBody());
 				if(!NO_MEMORY)
 				{
 					h = history.get(thread_name);
 					history.put(tid, new ArrayList<IHistory>());
-					h.add(new HistoryThread(tid));
+					int gamma= pc++;
+					parenthood.put(tid, new Tuple<String, Integer>(thread_name, gamma));
+					System.out.println(thread_name +" generated "+tid +" at instruction "+gamma);
+					h.add(new HistoryThread(tid,gamma));
 					history.put(thread_name, h);
 
 				}
@@ -551,6 +569,7 @@ public class Debugger {
 							int gamma= pc++;
 							IValue received =ch.receive(thread_name, gamma);
 							store.put(new_id, received);
+							variables.put(new_id, new Tuple<String, Integer>(thread_name, gamma));
 							if(!NO_MEMORY)
 							{
 								h = history.get(thread_name);
@@ -569,10 +588,12 @@ public class Debugger {
 							{
 								System.out.println("putting in store variable "+new_id);
 								store.put(new_id, val);
+								int gamma = pc++;
+								variables.put(new_id, new Tuple<String, Integer>(thread_name, gamma));
 								if(!NO_MEMORY)
 								{
 									h = history.get(thread_name);
-									h.add(new HistoryVar(new_id));
+									h.add(new HistoryVar(new_id,gamma));
 								}
 									break;
 							}
@@ -646,7 +667,9 @@ public class Debugger {
 							}
 							
 						}
-						h.add(new HistoryVar(new_id));
+						int gamma = pc++;
+						variables.put(new_id, new Tuple<String, Integer>(thread_name, gamma));
+						h.add(new HistoryVar(new_id,gamma));
 
 						break;
 					}
@@ -665,7 +688,9 @@ public class Debugger {
 							store.put(new_id, new IntConst(result));
 							//TODO put something in the history
 							h = history.get(thread_name);
-							h.add(new HistoryVar(new_id));
+							int gamma = pc++;
+							variables.put(new_id, new Tuple<String, Integer>(thread_name, gamma));
+							h.add(new HistoryVar(new_id,gamma));
 
 					}
 							//			execute(let.getStm());
@@ -823,7 +848,7 @@ public class Debugger {
 						}
 						else
 						{
-							System.out.println(warning + " size mismatch on invocation of procedure "+ call_id );
+							System.out.println(warning + " size mismatch on invocation of procedure "+ call_id +"\n");
 						}
 					}
 				}
@@ -883,7 +908,7 @@ public class Debugger {
 		
 		if(lst.size() == 0)
 		{
-			System.out.println(warning + "empty history for thread "+thread_id);
+			System.out.println(warning + "empty history for thread "+thread_id+"\n");
 			return -1;
 		}
 		
@@ -939,7 +964,7 @@ public class Debugger {
 						store.remove(log.getId());
 					}	
 					else val =store.remove(log.getId());
-					
+					ret = log.getInstruction();
 					//probably this check is useless since it there is always an esc delimiter of the scope
 					if(body.getType() == StatementType.SEQUENCE)
 					{
@@ -1004,7 +1029,7 @@ public class Debugger {
 							}
 							else
 							{
-								System.out.println(warning +" cannot revert port creation of "+log.getPort_name() +" since it is not empty");
+								System.out.println(warning +" cannot revert port creation of "+log.getPort_name() +" since it is not empty\n");
 								return -1;
 							}
 						}
@@ -1040,8 +1065,10 @@ public class Debugger {
 							new_body = new ThreadStm(thread_body);
 							next = body;
 							//removing from store variable and procedure
+							ret = log.getInstruction();						
 							threadlist.remove(xi);
 							history.remove(xi);
+							System.out.println(warning+" destroying thread "+xi+"\n");
 						}
 						else
 						{	//if the child has still some story = is not in its initial form
@@ -1136,13 +1163,41 @@ public class Debugger {
 	
 		if(next != null && next.getType() != StatementType.NIL)
 			new_body = new Sequence(new_body,next);
-		
+		System.out.println("... reversing thread "+thread_id +" of one step");
+
 		lst.remove(index);
 		history.put(thread_id, lst);
 		threadlist.put(thread_id, new_body);
 		return ret;
 	}
 
+	
+	
+	private static void destroyThread (String thread)
+	{
+		if(parenthood.containsKey(thread))
+		{		Tuple<String, Integer> t = parenthood.remove(thread);
+			HashMap<String, Integer> map = new HashMap<String, Integer>();
+			map.put(t.getFirst(), t.getSecond());
+			rollTill(map);
+		}
+		else rollEnd(thread); 
+			
+	}
+	
+	private static void destroyLet (String var_id)
+	{
+		if(variables.containsKey(var_id))
+		{		Tuple<String, Integer> t = variables.remove(var_id);
+			HashMap<String, Integer> map = new HashMap<String, Integer>();
+			map.put(t.getFirst(), t.getSecond());
+			rollTill(map);
+		}
+		else
+		{
+			System.out.println(warning+" variable identifier does not exists: "+var_id+"\n");
+		}
+	}
 	
 	
 	//forces backward the execution till a certain action
@@ -1158,12 +1213,16 @@ public class Debugger {
 			{
 				try {
 					int nro = stepBack(id);
-					System.out.println("... reversing thread "+id +" of one step");
-					if(nro == gamma)
+					/*perhaps the check should be nro < gamma */
+			/*		if(nro != -1)
+							System.out.println("... reversing thread "+id +" of one step");
+			*/
+					if(nro == gamma || nro ==-1)
 						break;
 				} catch (WrongElementChannel e) {
 					rollTill(e.getDependencies());
 				} catch (ChildMissingException e) {
+//					System.out.println(warning +" reversing child thread "+e.getChild() +"\n");
 					rollEnd(e.getChild());
 				}
 				
@@ -1187,7 +1246,7 @@ public class Debugger {
 				rollTill(e.getDependencies());
 				}
 			 catch (ChildMissingException e) {
-				System.out.println(warning +" reversing child thread "+e.getChild() +"\n");
+//				System.out.println(warning +" reversing child thread "+e.getChild() +"\n");
 				rollEnd(e.getChild());
 			}
 		}
@@ -1210,7 +1269,7 @@ public class Debugger {
 				rollTill(e.getDependencies());
 				}
 			 catch (ChildMissingException e) {
-				System.out.println(warning +" reversing child thread "+e.getChild());
+//				System.out.println(warning +" reversing child thread "+e.getChild());
 				rollEnd(e.getChild());
 			}
 		}
@@ -1268,7 +1327,10 @@ public class Debugger {
 		System.out.println("\t back (b)  thread_name (tries to execute backward one step of thread_name)");
 		System.out.println("\t undo (u)  thread_name  n (forces backward the execution of n steps of thread_name)");
 		System.out.println("\t roll (r) thread_name (rollsback a thread at its starting point)");
-		System.out.println("\t run (r) (runs the program till the first breaktpoint or eventually terminates the execution)");
+		System.out.println("\t destroythread (dt) thread_name (destroy the creation of a thread)");
+		System.out.println("\t destroyvariable (dv) thread_name (destroy the creation of a varialbe)");
+		
+		System.out.println("\t run  (runs the program till the first breaktpoint or eventually terminates the execution)");
 		System.out.println("\t dump (d) (dumps the configuration)");
 		System.out.println("\t restore (restores a dumped configuration)");
 		
@@ -1441,7 +1503,7 @@ public class Debugger {
 	{
 		if(!history.containsKey(id) && !isChan(id))
 		{
-			System.out.println(warning + " no history for identifier "+ id);
+			System.out.println(warning + " no history for identifier "+ id+"\n");
 			return;
 		
 		}
@@ -1451,7 +1513,7 @@ public class Debugger {
 		{	
 			if(h.size() == 0)
 			{
-				System.out.println(warning +" empty history for thread "+id);
+				System.out.println(warning +" empty history for thread "+id+"\n");
 			}
 			for (IHistory log : h) {
 				if(log.getType() != HistoryType.ESC)
@@ -1465,7 +1527,7 @@ public class Debugger {
 			String xi = lookupChan(id);//((SimpleId)store.get(id)).getId();
 			Channel ch = chans.get( xi);
 			if(ch.emptyStory())
-				System.out.println(warning +" empty history for channel "+id);
+				System.out.println(warning +" empty history for channel "+id+"\n");
 			else printChanHistory(xi);
 		}
 	}
@@ -1476,12 +1538,12 @@ public class Debugger {
 		
 		if(NO_MEMORY)
 		{
-			System.out.println(warning + " empty history for channel "+ chan_id);
+			System.out.println(warning + " empty history for channel "+ chan_id+"\n");
 			return;
 		}
 		if(ch == null)
 		{	
-			System.out.println(warning + " no history for channel "+ chan_id);
+			System.out.println(warning + " no history for channel "+ chan_id+"\n");
 			return;
 		}
 		

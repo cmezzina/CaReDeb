@@ -13,8 +13,11 @@ package language.history;
 public class HistoryVar implements IHistory {
 
 	private String id;
-	public HistoryVar(String id) {
+	private int instruction;
+
+	public HistoryVar(String id, int instruction) {
 		super();
+		this.instruction=instruction;
 		this.id = id;
 	}
 	public String getId() {
@@ -34,8 +37,14 @@ public class HistoryVar implements IHistory {
 		return "new variable "+id;
 	}
 	
+	public int getInstruction() {
+		return instruction;
+	}
+	public void setInstruction(int instruction) {
+		this.instruction = instruction;
+	}
 	public IHistory clone()
 	{
-		return new HistoryVar(id);
+		return new HistoryVar(id, instruction);
 	}
 }
