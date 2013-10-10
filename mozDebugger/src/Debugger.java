@@ -337,19 +337,19 @@ public class Debugger {
 								System.out.println(warning + "invalid number\n");
 							}
 						}
-						else if(cmd[0].equals("destroythread") || cmd[0].equals("dt"))
+						else if(cmd[0].equals("rollthread") || cmd[0].equals("rt"))
 						{
 								if(!threadlist.containsKey(cmd[1]))
 								{
 									System.out.println(warning + " invalid thread id "+cmd[1]+"\n");
 									continue;
 								}
-								destroyThread(cmd[1]);
+								rollThread(cmd[1]);
 						}
 					
-						else if(cmd[0].equals("destroyvar") || cmd[0].equals("dv"))
+						else if(cmd[0].equals("rollvar") || cmd[0].equals("rv"))
 						{
-								destroyLet(cmd[1]);
+								rollLet(cmd[1]);
 						}
 					
 						else if(cmd[0].equals("roll") || cmd[0].equals("r"))
@@ -580,7 +580,8 @@ public class Debugger {
 						{
 							System.out.println(error + "unrecognized channel "+from);
 							System.out.println();
-							return null;
+							System.exit(-1);
+							//return null;
 						}
 						break;
 					}
@@ -805,7 +806,8 @@ public class Debugger {
 				{
 					System.out.println(error+to +" is not a channel");
 					System.out.println();
-					return null; 
+					//return null;
+					System.exit(-1);
 				}
 			}
 			case INVOKE:
@@ -1170,10 +1172,9 @@ public class Debugger {
 		threadlist.put(thread_id, new_body);
 		return ret;
 	}
-
 	
 	
-	private static void destroyThread (String thread)
+	private static void rollThread (String thread)
 	{
 		if(parenthood.containsKey(thread))
 		{		Tuple<String, Integer> t = parenthood.remove(thread);
@@ -1185,7 +1186,7 @@ public class Debugger {
 			
 	}
 	
-	private static void destroyLet (String var_id)
+	private static void rollLet (String var_id)
 	{
 		if(variables.containsKey(var_id))
 		{		Tuple<String, Integer> t = variables.remove(var_id);
@@ -1327,8 +1328,8 @@ public class Debugger {
 		System.out.println("\t back (b)  thread_name (tries to execute backward one step of thread_name)");
 		System.out.println("\t undo (u)  thread_name  n (forces backward the execution of n steps of thread_name)");
 		System.out.println("\t roll (r) thread_name (rollsback a thread at its starting point)");
-		System.out.println("\t destroythread (dt) thread_name (destroy the creation of a thread)");
-		System.out.println("\t destroyvariable (dv) thread_name (destroy the creation of a varialbe)");
+		System.out.println("\t rollythread (rt) thread_name (rolls the creation of a thread)");
+		System.out.println("\t rollvariable (rv) id (rolls the creation of a varialbe)");
 		
 		System.out.println("\t run  (runs the program till the first breaktpoint or eventually terminates the execution)");
 		System.out.println("\t dump (d) (dumps the configuration)");
