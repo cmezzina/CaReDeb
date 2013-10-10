@@ -1,7 +1,7 @@
 let t = true in
 let f = false in
 let k = port in
-thread  {send k f} end;
-thread 	{send k t} ;
-	let x = {receive k} in skip end
-end end end end
+	thread  {send k f} end
+end
+end
+end
