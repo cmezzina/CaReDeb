@@ -361,7 +361,7 @@ public class Debugger {
 								if(cmd.length >2)
 								n = Integer.parseInt(cmd[2]);
 								
-								rollSend(cmd[1],n);
+								rollReceive(cmd[1],n);
 							}
 							catch(NumberFormatException e)
 							{
@@ -1435,6 +1435,8 @@ public class Debugger {
 		System.out.println("\t back (b)  thread_name (tries to execute backward one step of thread_name)");
 //		System.out.println("\t undo (u)  thread_name  n (forces backward the execution of n steps of thread_name)");
 		System.out.println("\t roll (r) thread_name n (rollsback a thread at its starting point)");
+		System.out.println("\t rollysend (rs) chan_name n (rolls last n send on a given channel)");
+		System.out.println("\t rollyreceive (rr) chan_name n (rolls the last n receive on a given channel)");
 		System.out.println("\t rollythread (rt) thread_name (rolls the creation of a thread)");
 		System.out.println("\t rollvariable (rv) id (rolls the creation of a varialbe)");
 		
