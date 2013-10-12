@@ -1,7 +1,12 @@
-let t = true in
-let f = false in
-let k = port in
-	thread  {send k f} end
-end
-end
+ let t = true in
+	 let f = false in 
+    	 let x = port in
+     		thread {send x t};
+     			let prova = {receive x} in
+     				skip
+     			end
+     		 end;
+     		{send x f}
+     	end
+     end
 end

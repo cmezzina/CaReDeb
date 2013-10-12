@@ -151,6 +151,8 @@ public class Channel {
 		}
 		return ret;
 	}
+	
+	
 	public HashMap<String, Integer> getbeforeMe(String thread)
 	{
 		//should reverse all the communication before
@@ -199,6 +201,51 @@ public class Channel {
 		return ret;
 	}
 	
+
+	public HashMap<String, Integer> getlastNRead(int n)
+	{
+		HashMap<String,Integer> ret= new HashMap<String, Integer>();
+		Iterator<Tuple<Tuple<IValue,String>,String>> it= story.iterator();
+		LinkedList<Integer> tmp_reader = new LinkedList<Integer>(pc_reader);
+
+		while(it.hasNext())
+		{	
+			if(n==0)
+				break;
+
+			Tuple<Tuple<IValue, String>, String> val = it.next();
+			int gamma = tmp_reader.removeLast();
+			
+			if(!ret.containsKey(val.getSecond()) || ret.get(val.getSecond()) > gamma)
+			{
+				ret.put(val.getSecond(),gamma);
+			}
+			
+			n--;
+		}
+		return ret;
+
+	}
+
+	
+	public HashMap<String, Integer> getlastNSend(int n)
+	{
+		HashMap<String,Integer> ret = new HashMap<String,Integer>();
+		Tuple<IValue,String> val;
+		LinkedList<Integer> tmp_sender = new LinkedList<Integer>(pc_sender);
+		Iterator<Tuple<IValue, String>> it = value.descendingIterator();
+		while(it.hasNext() )
+		{
+			if(n==0)
+				break;
+			
+			val = it.next();
+			ret.put(val.getSecond(), tmp_sender.removeLast());
+			n--;
+		}
+
+		return ret;
+	}
 	
 	
 	//for testing purposes

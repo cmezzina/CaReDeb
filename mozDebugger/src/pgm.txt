@@ -1,5 +1,12 @@
  let t = true in
-     let x = port in
-     	thread {send t x} end;
-     	{send t x};{send t x}
+	 let f = false in 
+    	 let x = port in
+     		thread {send t x};{send f x} end;
+     			let r1 = {receive x} in
+     				let r2 = {receive x} in
+     					skip
+     				end
+     			end
+     	end
+     end
 end
