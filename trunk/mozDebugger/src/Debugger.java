@@ -227,8 +227,8 @@ public class Debugger {
 					continue;
 
 				}
-				if (cmd[0].equals("back") || cmd[0].equals("undo") ||  cmd[0].equals("roll") || cmd[0].equals("forth") ||cmd[0].equals("f") ||
-						cmd[0].equals("b") || cmd[0].equals("u") || cmd[0].equals("r") )
+				if (cmd[0].equals("back") ||   cmd[0].equals("roll") || cmd[0].equals("forth") ||cmd[0].equals("f") ||
+						cmd[0].equals("b") ||  cmd[0].equals("r") )
 				{
 					if(cmd.length > 2 && !threadlist.containsKey(cmd[1]))
 					{
@@ -236,7 +236,6 @@ public class Debugger {
 						System.out.println();
 						continue;
 					}
-					
 					
 				}
 				
@@ -318,7 +317,7 @@ public class Debugger {
 								}
 						}
 				
-						else if(cmd[0].equals("undo") || cmd[0].equals("u"))
+		/*				else if(cmd[0].equals("undo") || cmd[0].equals("u"))
 						{
 							try{
 								if(!threadlist.containsKey(cmd[1]))
@@ -336,6 +335,39 @@ public class Debugger {
 							{
 								System.out.println(warning + "invalid number\n");
 							}
+						}
+		*/	
+						else if(cmd[0].equals("rollsend") || cmd[0].equals("rs"))
+						{
+							
+							int n=1;
+							try{
+								if(cmd.length >2)
+								n = Integer.parseInt(cmd[2]);
+								
+								rollSend(cmd[1],n);
+							}
+							catch(NumberFormatException e)
+							{
+								System.out.println(warning + "invalid number\n");
+							}
+
+						}
+						else if(cmd[0].equals("rollreceive") || cmd[0].equals("rr"))
+						{
+							
+							int n=1;
+							try{
+								if(cmd.length >2)
+								n = Integer.parseInt(cmd[2]);
+								
+								rollSend(cmd[1],n);
+							}
+							catch(NumberFormatException e)
+							{
+								System.out.println(warning + "invalid number\n");
+							}
+
 						}
 						else if(cmd[0].equals("rollthread") || cmd[0].equals("rt"))
 						{
@@ -359,10 +391,28 @@ public class Debugger {
 								System.out.println(warning + " invalid thread id "+cmd[1]+"\n");
 								continue;
 							}
-							rollEnd(cmd[1]);
-							System.out.println(done);
+							if(cmd.length == 2)
+							{
+								rollEnd(cmd[1]);
+								System.out.println(done);
+							}
+								else
+							{
+								try
+								{
+									if(rollNsteps(cmd[1], Integer.parseInt(cmd[2])))
+										System.out.println(done);
+									else
+										System.out.println(warning + "nothing to undo\n");
+								}
+								catch(NumberFormatException e)
+								{
+									System.out.println(warning + "invalid number\n");
+								}
+									
+							}
 						}
-						else if(cmd[0].equals("story") || cmd[0].equals("h"))
+						else if(cmd[0].equals("hystory") || cmd[0].equals("h"))
 						{
 							printHistory(cmd[1]);
 						}
@@ -1174,6 +1224,63 @@ public class Debugger {
 	}
 	
 	
+	
+	private static void rollReceive(String chan_id, int n)
+	{
+		IValue chan = store.get(chan_id);
+		if(isChan(chan_id))
+		{
+			String id = ((SimpleId)chan).getId();
+			String lookup = lookupChan(id);
+			Channel xi = chans.get(lookup);
+			if(!xi.isEmpty())
+			{
+				HashMap<String, Integer> map =xi.getlastNRead(n);
+				rollTill(map);
+			}
+			else
+			{
+				System.out.println(warning+" empty channel "+chan_id+"\n");
+				
+				
+			}
+		}
+		else
+		{
+			System.out.println(warning+" invalid channel name "+chan_id+"\n");
+		}
+			
+		
+	}
+	
+	private static void rollSend(String chan_id, int n)
+	{
+		
+		IValue chan = store.get(chan_id);
+		if(isChan(chan_id))
+		{
+			String id = ((SimpleId)chan).getId();
+			String lookup = lookupChan(id);
+			Channel xi = chans.get(lookup);
+			if(!xi.isEmpty())
+			{
+				HashMap<String, Integer> map =xi.getlastNSend(n);
+				rollTill(map);
+			}
+			else
+			{
+				System.out.println(warning+" empty channel "+chan_id+"\n");
+				
+				
+			}
+		}
+		else
+		{
+			System.out.println(warning+" invalid channel name "+chan_id+"\n");
+		}
+				
+	}
+	
 	private static void rollThread (String thread)
 	{
 		if(parenthood.containsKey(thread))
@@ -1326,8 +1433,8 @@ public class Debugger {
 	{
 		System.out.println("\nCommands : \n\t forth (f) thread_name (executes forward one step of thread_name)");
 		System.out.println("\t back (b)  thread_name (tries to execute backward one step of thread_name)");
-		System.out.println("\t undo (u)  thread_name  n (forces backward the execution of n steps of thread_name)");
-		System.out.println("\t roll (r) thread_name (rollsback a thread at its starting point)");
+//		System.out.println("\t undo (u)  thread_name  n (forces backward the execution of n steps of thread_name)");
+		System.out.println("\t roll (r) thread_name n (rollsback a thread at its starting point)");
 		System.out.println("\t rollythread (rt) thread_name (rolls the creation of a thread)");
 		System.out.println("\t rollvariable (rv) id (rolls the creation of a varialbe)");
 		
@@ -1338,7 +1445,7 @@ public class Debugger {
 			
 		System.out.println("\t list (l) (displays all the available threads)");
 		System.out.println("\t print (p) id (shows the state of a thread, channel, or variable)");
-		System.out.println("\t story (h) id (shows thread/channel computational history)");
+		System.out.println("\t hystory (h) id (shows thread/channel computational history)");
 		System.out.println("\t store  (s) (displays all the ids contained in the store)");
 		System.out.println("\t help  (c) (displays all commands)");
 		System.out.println("\t quit (q)\n");
