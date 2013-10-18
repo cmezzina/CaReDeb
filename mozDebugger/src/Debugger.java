@@ -379,7 +379,7 @@ public class Debugger {
 								rollThread(cmd[1]);
 						}
 					
-						else if(cmd[0].equals("rollvar") || cmd[0].equals("rv"))
+						else if(cmd[0].equals("rollvariable") || cmd[0].equals("rv"))
 						{
 								rollLet(cmd[1]);
 						}
@@ -486,7 +486,7 @@ public class Debugger {
 			}
 			
 		}
-		System.out.println(warning + " all threads are terminated\n");
+		System.out.println(warning + " all threads are terminated or blocked\n");
 	}
 	
 	//logs and executes all the esc in a sequence at once. Stops when there is a statement different from esc
@@ -1224,7 +1224,7 @@ public class Debugger {
 	}
 	
 	
-	
+	//should look at the queue history and reverse the element
 	private static void rollReceive(String chan_id, int n)
 	{
 		IValue chan = store.get(chan_id);
@@ -1233,14 +1233,14 @@ public class Debugger {
 			String id = ((SimpleId)chan).getId();
 			String lookup = lookupChan(id);
 			Channel xi = chans.get(lookup);
-			if(!xi.isEmpty())
+			if(!xi.isEmptyHistory())
 			{
 				HashMap<String, Integer> map =xi.getlastNRead(n);
 				rollTill(map);
 			}
 			else
 			{
-				System.out.println(warning+" empty channel "+chan_id+"\n");
+				System.out.println(warning+" empty channel history "+chan_id+"\n");
 				
 				
 			}
@@ -1435,10 +1435,10 @@ public class Debugger {
 		System.out.println("\t back (b)  thread_name (tries to execute backward one step of thread_name)");
 //		System.out.println("\t undo (u)  thread_name  n (forces backward the execution of n steps of thread_name)");
 		System.out.println("\t roll (r) thread_name n (rollsback a thread at its starting point)");
-		System.out.println("\t rollysend (rs) chan_name n (rolls last n send on a given channel)");
-		System.out.println("\t rollyreceive (rr) chan_name n (rolls the last n receive on a given channel)");
-		System.out.println("\t rollythread (rt) thread_name (rolls the creation of a thread)");
-		System.out.println("\t rollvariable (rv) id (rolls the creation of a varialbe)");
+		System.out.println("\t rollsend (rs) chan_name n (rolls last n send on a given channel)");
+		System.out.println("\t rollreceive (rr) chan_name n (rolls the last n receive on a given channel)");
+		System.out.println("\t rollthread (rt) thread_name (rolls the creation of a thread)");
+		System.out.println("\t rollvariable (rv) id (rolls the creation of a variable)");
 		
 		System.out.println("\t run  (runs the program till the first breaktpoint or eventually terminates the execution)");
 		System.out.println("\t dump (d) (dumps the configuration)");
@@ -1447,7 +1447,7 @@ public class Debugger {
 			
 		System.out.println("\t list (l) (displays all the available threads)");
 		System.out.println("\t print (p) id (shows the state of a thread, channel, or variable)");
-		System.out.println("\t hystory (h) id (shows thread/channel computational history)");
+		System.out.println("\t history (h) id (shows thread/channel computational history)");
 		System.out.println("\t store  (s) (displays all the ids contained in the store)");
 		System.out.println("\t help  (c) (displays all commands)");
 		System.out.println("\t quit (q)\n");
