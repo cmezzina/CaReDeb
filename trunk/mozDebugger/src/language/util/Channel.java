@@ -48,6 +48,11 @@ public class Channel {
 		return value.isEmpty();
 	}
 	
+	public boolean isEmptyHistory()
+	{
+		return story.isEmpty();
+	}
+	
 	public void send(IValue val, String thread, int gamma)
 	{
 		value.add(new Tuple<IValue, String>(val, thread));
