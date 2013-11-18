@@ -9,6 +9,7 @@
  * Contributors:
  *     Claudio Antares Mezzina - initial API and implementation
  *     Ivan Lanese - implementation
+ *     Elena Giachino - implementation
  ******************************************************************************/
 import java.io.BufferedReader;
 import java.io.File;
