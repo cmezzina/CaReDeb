@@ -100,6 +100,8 @@ public class Debugger {
 	static HashMap<String,IValue> procs = new HashMap<String,IValue>();
 	//thread pool
 	static HashMap<String,IStatement> threadlist = new HashMap<String, IStatement>();
+	static HashMap<String, Integer> thread_child = new HashMap<String, Integer>();
+	static HashMap<String, Integer> thread_chan = new HashMap<String, Integer>();
 	
 	static HashMap<String , ArrayList<IHistory>> history = new HashMap<String, ArrayList<IHistory>>();
 	
@@ -145,7 +147,8 @@ public class Debugger {
 			program = mozParser.parse(new FileInputStream(path));
 			//program represents the first configuration
 			
-			String initial = generateThreadId();
+			String initial = "t_0";
+			thread_child.put(initial, 0);
 			threadlist.put(initial, program);
 			history.put(initial, new ArrayList<IHistory>());
 			System.out.println("generated initial configuration "+ initial +"\n\n");
@@ -573,7 +576,7 @@ public class Debugger {
 			{
 				ThreadStm th = (ThreadStm)stm;
 				
-				String tid = generateThreadId();
+				String tid = generateThreadId(thread_name);
 				threadlist.put(tid, th.getBody());
 				if(!NO_MEMORY)
 				{
@@ -651,7 +654,7 @@ public class Debugger {
 							}
 					case PORT:
 							{
-								String xi = generateChanId();
+								String xi = generateChanId(thread_name);
 								System.out.println("generating channel "+ new_id +" --> "+xi);
 								store.put(new_id, new SimpleId(xi));
 								chans.put(xi, new Channel());
@@ -844,7 +847,7 @@ public class Debugger {
 					Channel tmp = chans.get(lookup);
 					tmp.send(tosend, thread_name,gamma);
 					//chans.put(id, tmp );
-					System.out.println("sending to channel "+to);
+					System.out.println("sending to channel ");
 					if(!NO_MEMORY)
 					{
 						h = history.get(thread_name);
@@ -1121,6 +1124,9 @@ public class Debugger {
 							ret = log.getInstruction();						
 							threadlist.remove(xi);
 							history.remove(xi);
+							thread_child.remove(thread_id);
+							thread_chan.remove(thread_id);
+							
 							System.out.println(warning+" destroying thread "+xi+"\n");
 						}
 						else
@@ -1385,9 +1391,21 @@ public class Debugger {
 		return flag;
 	}
 	
-	private static String generateChanId()
+	private static String generateChanId(String t_id)
 	{
-		return "chan_"+(chan_count++);
+//		return "chan_"+(chan_count++);
+		int nro = 0;
+		
+		if(thread_chan.containsKey(t_id))
+			nro = thread_chan.get(t_id);
+		
+		nro++;
+		thread_chan.put(t_id, nro);
+		String cid = t_id+"_xi_"+nro;
+		if(store.containsKey(cid))
+			System.out.println(warning + " "+cid + " identifier already used as variable.");
+		return cid;
+	
 
 	}
 	private static String generateProcId()
@@ -1404,17 +1422,28 @@ public class Debugger {
 
 	}
 	
-	private static String generateThreadId()
+	private static String generateThreadId(String t_id)
 	{
-		String ret= null;
 		
-		while(true)
+		int nro = 0;
+		
+		if(thread_child.containsKey(t_id))
+			nro = thread_child.get(t_id);
+		
+		nro++;
+		thread_child.put(t_id, nro);
+		String tid = t_id+nro;
+		if(store.containsKey(tid))
+			System.out.println(warning + " "+tid + " identifier already used as variable.");
+		return t_id +"_"+nro;
+		
+		/*while(true)
 		{
 			ret="t_"+(thread_count++);
 			if(!store.containsKey(ret));
 				break;
-		}
-		return ret;
+		}*/
+		//return ret;
 
 	}
 	private static String generateVarId(String id)
