@@ -10,6 +10,7 @@
  ******************************************************************************/
 package language.util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -31,10 +32,14 @@ public class Channel {
 	
 	static public  boolean NO_MEMORY = false;
 	
+	//pair of thread_id and boolean 
+	//true means it is a reader, false it is a sender
+	protected ArrayList<Tuple<String,Boolean>> sched;
 	
 	public Channel()
 	{
 		value = new LinkedList<Tuple<IValue,String>>();
+		sched = new ArrayList<Tuple<String,Boolean>>();
 		if(!NO_MEMORY)
 		{
 			story = new LinkedList<Tuple<Tuple<IValue,String>,String>>();
@@ -56,6 +61,8 @@ public class Channel {
 	public void send(IValue val, String thread, int gamma)
 	{
 		value.add(new Tuple<IValue, String>(val, thread));
+		sched.add(new Tuple<String, Boolean>(thread,false));
+
 		if(!NO_MEMORY)
 			pc_sender.add(gamma);
 //		System.out.println(" ... inserted value "+gamma +" by thread "+thread );
@@ -74,6 +81,7 @@ public class Channel {
 		}
 		System.out.println(" ... reading "+thread +" "+gamma );
 
+		sched.add(new Tuple<String, Boolean>(thread,true));
 		return ret.getFirst();
 	}
 	
@@ -253,6 +261,17 @@ public class Channel {
 	}
 	
 	
+	public void printSched()
+	{
+		Iterator<Tuple<String,Boolean>> it = sched.iterator();
+		while(it.hasNext())
+		{
+			Tuple<String, Boolean> val = it.next();
+			System.out.print("("+val.getFirst() +" "+ val.getSecond() +")");
+		}
+		System.out.println();
+		
+	}
 	//for testing purposes
 	public static void main(String args[])
 	{
@@ -272,10 +291,11 @@ public class Channel {
 		System.out.println(ch.reverseReceive("t4"));
 		System.out.println(ch.reverseReceive("t4"));
 		*/
-		System.out.println(ch.story);
+/*		System.out.println(ch.story);
 		Channel cl = ch.clone();
 		System.out.println(cl.story);
-		
+	*/
+		ch.printSched();
 
 	}
 	@SuppressWarnings("unchecked")
