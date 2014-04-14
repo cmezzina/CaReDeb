@@ -12,7 +12,8 @@ package language.history;
 
 public class HistorySkip implements IHistory {
 
-	@Override
+	private int instruction;
+
 	public HistoryType getType() {
 		// TODO Auto-generated method stub
 		return HistoryType.SKIP;
@@ -24,5 +25,10 @@ public class HistorySkip implements IHistory {
 	public IHistory clone()
 	{
 		return new HistorySkip();
+	}
+	@Override
+	public int getInstruction() {
+		// TODO Auto-generated method stub
+		return instruction;
 	}
 }

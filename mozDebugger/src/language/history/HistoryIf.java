@@ -77,4 +77,11 @@ public class HistoryIf implements IHistory {
 		return ret +" then  "+body.toString() + " else _ end ";
 		
 	}
+
+
+	@Override
+	public int getInstruction() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }

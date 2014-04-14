@@ -3,6 +3,8 @@ package language.history;
 public class HistoryBreak implements IHistory {
 
 	static HistoryType type = HistoryType.BREAK;
+	
+	
 	@Override
 	public HistoryType getType() {
 		// TODO Auto-generated method stub
@@ -18,4 +20,11 @@ public class HistoryBreak implements IHistory {
 	{
 		return "breakpoint";
 	}
+
+	@Override
+	public int getInstruction() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+	
 }

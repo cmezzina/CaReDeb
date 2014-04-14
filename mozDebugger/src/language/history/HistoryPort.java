@@ -41,4 +41,10 @@ public class HistoryPort implements IHistory {
 	{
 		return new HistoryPort(port_name);
 	}
+
+	@Override
+	public int getInstruction() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }

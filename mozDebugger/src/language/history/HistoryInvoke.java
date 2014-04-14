@@ -54,4 +54,9 @@ public class HistoryInvoke implements IHistory {
 	{
 		return new HistoryInvoke(proc_name, param);
 	}
+	@Override
+	public int getInstruction() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }

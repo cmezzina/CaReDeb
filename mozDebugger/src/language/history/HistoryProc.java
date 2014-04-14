@@ -38,4 +38,9 @@ public class HistoryProc implements IHistory {
 	{
 		return new HistoryProc(id);
 	}
+	@Override
+	public int getInstruction() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }
