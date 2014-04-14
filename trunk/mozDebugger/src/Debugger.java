@@ -50,6 +50,7 @@ import language.statement.StatementType;
 import language.statement.ThreadStm;
 import language.util.Channel;
 import language.util.DumpedConfiguration;
+import language.util.Monitor;
 import language.util.Tuple;
 import language.value.BinaryIntExp;
 import language.value.BoolExpr;
@@ -88,6 +89,8 @@ public class Debugger {
 
 	//should be cloned I guess
 	static DumpedConfiguration dump ;
+	static Monitor monitor;
+	
 	
 	/*stores*/
 	//variables store
@@ -109,6 +112,7 @@ public class Debugger {
 	static HashMap<String,Tuple<String,Integer>> parenthood = new HashMap<String, Tuple<String, Integer>>();
 	
 	static HashMap<String,Tuple<String,Integer>> variables = new HashMap<String, Tuple<String, Integer>>();
+	
 	
 	/** DEBUGGING PAMATERES**/
 	static boolean NO_MEMORY = false;
@@ -186,6 +190,16 @@ public class Debugger {
 					run();
 					continue;
 				}
+				
+				if(cmd[0].equals("replay"))
+				{
+					try {
+						replay();
+					} catch (BreakPointException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 				if(cmd[0].equals("help") || cmd[0].equals("c"))
 				{
 					showHelp();
@@ -217,6 +231,12 @@ public class Debugger {
 					else
 						System.out.println("Stored ids :"+store.keySet());		
 					continue;
+				}
+				else 
+					if (cmd[0].equals("monitor") || cmd[0].equals("m"))
+				{
+					init_monitor();
+					System.out.println(monitor);
 				}
 				else
 					if(cmd[0].equals("list") || cmd[0].equals("l"))
@@ -270,6 +290,7 @@ public class Debugger {
 								{
 									try {
 										body = execute(body, cmd[1]);
+										
 									} catch (BreakPointException e) {
 										// TODO Auto-generated catch block
 										System.out.println("breakpoint reached at "+ cmd[1]);
@@ -320,7 +341,8 @@ public class Debugger {
 									System.out.println(warning+ e.getMsg());								
 								}
 						}
-				
+						
+					
 		/*				else if(cmd[0].equals("undo") || cmd[0].equals("u"))
 						{
 							try{
@@ -437,6 +459,113 @@ public class Debugger {
 
 
 	}
+	
+	/*
+	 * should re-execute following the monitor 
+	 * **/
+	private static void replay() throws BreakPointException
+	{
+		ArrayList<String> to_iterate = monitor.getThreadList();
+		
+		while(to_iterate.size() >0)
+		{
+			ArrayList<String> to_remove = new ArrayList<String>();
+			for (String tid : to_iterate) 
+			{
+				if (monitor.canMove(tid) )
+				{
+					if (threadlist.containsKey(tid))
+					{
+						IStatement stm = threadlist.get(tid);
+						if (stm.getType() == StatementType.LET)
+						{
+		
+							Assignment let = (Assignment)stm;
+							IValue val = let.getV();
+							ValueType valuetype = val.getType();
+							if(valuetype == ValueType.RECEIVE)
+							{
+								//we should check if it is our turn to read
+								Receive rec = (Receive) val;
+								String from =rec.getFrom();
+								String xi = lookupChan(from);
+								if (!monitor.isTurnChan(tid, xi, true))
+									continue;
+								Channel ch = chans.get(xi);
+								//if the channel is empty there is no need to execute the read operation
+								if(ch.isEmpty())
+									continue;
+							
+								monitor.consumeAction(tid, xi, true);
+		
+							}
+						}
+						else
+							if(stm.getType() == StatementType.SEND)
+							{
+								Send snd = (Send) stm;
+								String to = snd.getObj();
+								IValue chan = store.get(to);
+								if(isChan(to))
+								{
+									String id = ((SimpleId)chan).getId();
+									String xi = lookupChan(id);
+									if(!monitor.isTurnChan(tid, xi, false))
+										continue;
+									monitor.consumeAction(tid, xi, false);
+		
+								}
+							}
+						
+						IStatement body = execute(threadlist.get(tid), tid);
+						if(body!=null)
+						{
+							monitor.move(tid);
+							threadlist.put(tid, body);
+							if (monitor.hasTerminated(tid)	)
+								to_remove.add(tid);
+						}	
+					}
+				}
+				//the thread 
+				else
+				{
+					to_remove.add(tid);		
+				}
+				
+	
+			}			
+			to_iterate.removeAll(to_remove);
+			
+		}
+		
+	}
+	
+	//better check perhaps problem with ESC
+	private static void init_monitor()
+	{
+		Iterator<String> it = threadlist.keySet().iterator();
+		HashMap <String, Integer> tmp = new HashMap<String, Integer>();
+		
+		//number of steps for each thread
+		while(it.hasNext())
+		{
+			String thread = it.next();
+			tmp.put(thread, history.get(thread).size());
+		}
+		
+		it = chans.keySet().iterator();
+		HashMap<String, ArrayList<Tuple<String, Boolean>>> ch = new HashMap<String, ArrayList<Tuple<String,Boolean>>>();
+		while(it.hasNext())
+		{
+			String chan_id = it.next();
+			ch.put(chan_id, chans.get(chan_id).getIOAccessSequence());
+			
+		}
+		monitor = new Monitor(tmp, ch);
+	}
+	
+	
 	
 	//first attempt of scheduler 
 	private static boolean allStopped()
@@ -686,6 +815,8 @@ public class Debugger {
 						//alias we should infer the variable type
 						IntID var = (IntID)val;
 						IValue id = lookupVar(var.getValue());
+						System.out.println(var+ "   "+ id );
+
 						//if it is a variable
 						if(id!=null)
 						{
@@ -847,7 +978,7 @@ public class Debugger {
 					Channel tmp = chans.get(lookup);
 					tmp.send(tosend, thread_name,gamma);
 					//chans.put(id, tmp );
-					System.out.println("sending to channel ");
+					System.out.println("sending to channel "+to);
 					if(!NO_MEMORY)
 					{
 						h = history.get(thread_name);
@@ -922,7 +1053,8 @@ public class Debugger {
 				}
 				return new Nil();
 			}
-			case ESC:
+	//better check if we need this anymore
+		/*		case ESC:
 			{
 				if(!NO_MEMORY)
 				{
@@ -933,7 +1065,7 @@ public class Debugger {
 				}
 					return new Nil();
 			}
-			
+			*/
 			case BREAK: {
 						h = history.get(thread_name);
 						h.add(new HistoryBreak());
@@ -956,12 +1088,12 @@ public class Debugger {
 		int ret =0;
 		//thread next action after a step backward
 		IStatement new_body = null;
+		
 		//the rest of the body
 		IStatement next=null ;
 		
 		//checks about thread id and history are done in the callee
 		lst = history.get(thread_id);
-		
 		if(lst.size() == 0)
 		{
 			System.out.println(warning + "empty history for thread "+thread_id+"\n");
@@ -1222,7 +1354,7 @@ public class Debugger {
 	
 		if(next != null && next.getType() != StatementType.NIL)
 			new_body = new Sequence(new_body,next);
-		System.out.println("... reversing thread "+thread_id +" of one step");
+		System.out.println("... reversing thread "+thread_id +" undoing "+action);
 
 		lst.remove(index);
 		history.put(thread_id, lst);
@@ -1314,6 +1446,27 @@ public class Debugger {
 		}
 	}
 	
+	//retrieves the first gamma !=0 in the memory starting from the end
+	static int getGamma(String thread_id)
+	{
+		
+		ArrayList<IHistory> lst=history.get(thread_id);
+		 	
+		
+		int index = lst.size();
+		while (index > 0)
+		{
+			index --;
+			IHistory action = lst.get(index);
+			int ret = action.getInstruction();
+			if (ret != 0)
+				return ret;
+			
+		}
+		
+		return -1;
+		
+	}
 	
 	//forces backward the execution till a certain action
 	private static void rollTill(HashMap<String, Integer> map)
@@ -1323,21 +1476,14 @@ public class Debugger {
 		{
 			String id = it.next();
 			int gamma = map.get(id);
-			
-			while(true)
+			//getGamma retrieves the next gamma in the history
+			while(gamma <= getGamma(id))
 			{
 				try {
-					int nro = stepBack(id);
-					/*perhaps the check should be nro < gamma */
-			/*		if(nro != -1)
-							System.out.println("... reversing thread "+id +" of one step");
-			*/
-					if(nro == gamma || nro ==-1)
-						break;
+					stepBack(id);
 				} catch (WrongElementChannel e) {
 					rollTill(e.getDependencies());
 				} catch (ChildMissingException e) {
-//					System.out.println(warning +" reversing child thread "+e.getChild() +"\n");
 					rollEnd(e.getChild());
 				}
 				
@@ -1601,8 +1747,10 @@ public class Debugger {
 	//returns the id of the original variable
 	private static IValue lookupVar(String id)
 	{
+		//perhaps also for proc
+		if(chans.containsKey(id) || procs.containsKey(id))
+			return new SimpleId(id);
 		IValue val = store.get(id);
-		
 		if(val == null)
 			return null;
 		
@@ -1611,6 +1759,7 @@ public class Debugger {
 		case ID:
 			return lookupVar( ((SimpleId)val).getId());
 		case INT_ID:
+
 			return lookupVar(((IntID)val).getValue());
 		default:
 			return val;

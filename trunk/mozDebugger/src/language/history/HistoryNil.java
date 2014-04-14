@@ -27,4 +27,10 @@ public class HistoryNil implements IHistory {
 	{
 		return new HistoryNil();
 	}
+
+	@Override
+	public int getInstruction() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }

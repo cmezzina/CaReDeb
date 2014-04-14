@@ -79,7 +79,7 @@ public class Channel {
 			pc_reader.addFirst(gamma);
 			story.addFirst(new Tuple<Tuple<IValue,String>,String>(ret,thread));
 		}
-		System.out.println(" ... reading "+thread +" "+gamma );
+//		System.out.println(" ... reading "+thread +" "+gamma );
 
 		sched.add(new Tuple<String, Boolean>(thread,true));
 		return ret.getFirst();
@@ -102,6 +102,11 @@ public class Channel {
 		}
 		else return null;
 			
+	}
+	
+	public ArrayList<Tuple<String,Boolean>> getIOAccessSequence()
+	{
+		return sched;
 	}
 	
 	public boolean reverseReceive(String thread)

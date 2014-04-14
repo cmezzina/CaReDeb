@@ -27,4 +27,9 @@ public class HistoryEsc implements IHistory {
 	{
 		return new HistoryEsc();
 	}
+	@Override
+	public int getInstruction() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }

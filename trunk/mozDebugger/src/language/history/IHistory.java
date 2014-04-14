@@ -13,4 +13,6 @@ package language.history;
 public interface IHistory extends Cloneable{
 	public HistoryType getType();
 	public IHistory clone();
+	
+	public int getInstruction();
 }

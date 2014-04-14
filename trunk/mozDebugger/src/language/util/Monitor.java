@@ -2,10 +2,11 @@ package language.util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 public class Monitor {
 
-	//a monitor contains the number of move for each thread and the IO sequence on channels
+	//a monitor contains the number of moves for each thread and the IO sequence on channels
 	private HashMap<String,Integer> move; 
 	private HashMap<String, ArrayList<Tuple<String, Boolean>>> ch;
 	
@@ -21,16 +22,35 @@ public class Monitor {
 		if(move.containsKey(tid))
 		{
 			if (move.get(tid)>0)
+			{
+				
 				return true;
+			}
 			
 		}	
 		return false;
 		
 	}
-	public void moved(String tid)
+	
+	public void move(String tid)
 	{
-		move.put(tid, move.get(tid)-1);
+		if(move.containsKey(tid))
+		{
+			move.put(tid, move.get(tid)-1);
+		}
+	}
+	
+	public boolean hasTerminated(String tid)
+	{
+		if(move.containsKey(tid))
+			return move.get(tid) == 0;
 		
+		return false;
+		
+	}
+	public ArrayList<String> getThreadList()
+	{
+		return new ArrayList<String>(move.keySet());
 	}
 	
 	/*
@@ -42,22 +62,52 @@ public class Monitor {
 		Tuple<String,Boolean>action = lst.get(0);
 		if(action.getFirst() == tid && action.getSecond() == operation)
 		{
-			lst.remove(0);
+			
 			return true;
 		}
 		return false;
 	}
 	
+	public void consumeAction(String tid, String chan, Boolean operation)
+	{
+		ArrayList<Tuple<String,Boolean>>lst = ch.get(chan);
+		Tuple<String,Boolean>action = lst.get(0);
+		if(action.getFirst() == tid && action.getSecond() == operation)
+		{
+			lst.remove(0);
+			ch.put(chan, lst);
+		}
+		
+	}
 	
+	public String toString()
+	{
+		String ret = "";
+		Iterator<String> it = move.keySet().iterator();
+		while(it.hasNext())
+		{
+			String val = it.next();
+			ret += val + " " + move.get(val)+"\n";
+		}
+		it = ch.keySet().iterator();
+		
+		while(it.hasNext())
+		{
+			String val = it.next();
+			ret += val + " " + ch.get(val)+"\n";
+		}
+		
+		return ret;
+	}
 	public static void main(String args[])
 	{
 		HashMap<String, Integer> s = new HashMap<String, Integer>();
 		HashMap<String, ArrayList<Tuple<String, Boolean>>> chans = new HashMap<String, ArrayList<Tuple<String,Boolean>>>();
 		
 		ArrayList<Tuple<String,Boolean>>	tmp = new ArrayList<Tuple<String, Boolean>>();
-		tmp.add(new Tuple("t_0",false));
-		tmp.add(new Tuple("t_1",true));
-		tmp.add(new Tuple("t_1", false));
+		tmp.add(new Tuple<String, Boolean>("t_0",false));
+		tmp.add(new Tuple<String, Boolean>("t_1",true));
+		tmp.add(new Tuple<String, Boolean>("t_1", false));
 		chans.put("xi", tmp);
 		Monitor m = new Monitor(s,chans);
 		
