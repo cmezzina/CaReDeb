@@ -2,12 +2,13 @@ package expection;
 
 import language.statement.IStatement;
 
-public class BreakPointException extends Exception {
+public class AssertionException extends Exception {
 
+	//similar to breakpoint exception
 	private IStatement stm;
 	private String msg;
 	
-	public BreakPointException(IStatement stm, String msg)
+	public AssertionException(IStatement stm, String msg)
 	{
 		this.stm= stm;
 		this.msg = msg;
@@ -16,12 +17,12 @@ public class BreakPointException extends Exception {
 	public IStatement getStm() {
 		return stm;
 	}
+	public String getMsg() {
+		return msg;
+	}
 
 	public void setStm(IStatement stm) {
 		this.stm = stm;
 	}
-	public String getMsg()
-	{
-		return msg;
-	}
+	
 }

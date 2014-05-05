@@ -15,14 +15,18 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import language.history.HistoryAssert;
 import language.history.HistoryBreak;
 import language.history.HistoryEsc;
 import language.history.HistoryIf;
@@ -36,6 +40,7 @@ import language.history.HistoryThread;
 import language.history.HistoryType;
 import language.history.HistoryVar;
 import language.history.IHistory;
+import language.statement.Assert;
 import language.statement.Assignment;
 import language.statement.BreakStatemet;
 import language.statement.Conditional;
@@ -70,6 +75,7 @@ import language.value.SumValue;
 import language.value.ValueType;
 import parser.ParseException;
 import parser.mozParser;
+import expection.AssertionException;
 import expection.BreakPointException;
 import expection.ChildMissingException;
 import expection.WrongElementChannel;
@@ -148,8 +154,9 @@ public class Debugger {
 				return;
 			}
 			System.out.println("reading  file  ... "+path);
-			program = mozParser.parse(new FileInputStream(path));
-			//program represents the first configuration
+				program = mozParser.parse(new FileInputStream(path));
+			
+				//program represents the first configuration
 			
 			String initial = "t_0";
 			thread_child.put(initial, 0);
@@ -159,8 +166,10 @@ public class Debugger {
 		} catch (FileNotFoundException e) {
 			
 			e.printStackTrace();
+			return;
 		} catch (ParseException e) {
 			e.printStackTrace();
+			return;
 		}
 		System.out.println(warning+" type help to see all the commands \n\n");
 
@@ -199,28 +208,17 @@ public class Debugger {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					catch (AssertionException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 				if(cmd[0].equals("help") || cmd[0].equals("c"))
 				{
 					showHelp();
 					continue;
 				}
-				if(cmd[0].equals("dump") || cmd[0].equals("d"))
-				{
-					dump();
-					System.out.println(".... dumped\n");
-					continue;
-				}
-				if(cmd[0].equals("restore"))
-				{
-					history = dump.getHistory();
-					procs= dump.getProcs();
-					chans = dump.getChans();
-					store = dump.getStore();
-					threadlist = dump.getThreadlist();
-					System.out.println(".... restored\n");
-					continue;
-				}
+			
 				if(cmd[0].equals("store") || cmd[0].equals("s"))
 				{ 
 					if(store.size() == 0)
@@ -263,7 +261,34 @@ public class Debugger {
 					
 				}
 				
-				
+				if(cmd[0].equals("dump") || cmd[0].equals("d"))
+				{
+					dump(cmd[1]);
+					System.out.println(".... configuration dumped in " +cmd[1]+"\n");
+					continue;
+				}
+				if(cmd[0].equals("restore"))
+				{
+					String filename = cmd[1];
+					
+					 FileInputStream fileIn = new FileInputStream("./"+filename);
+			         ObjectInputStream in = new ObjectInputStream(fileIn);
+			         try {
+						dump = (DumpedConfiguration) in.readObject();
+					} catch (ClassNotFoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+			         in.close();
+			         fileIn.close();
+					history = dump.getHistory();
+					procs= dump.getProcs();
+					chans = dump.getChans();
+					store = dump.getStore();
+					threadlist = dump.getThreadlist();
+					System.out.println(".... restored configuration " + filename +"\n");
+					continue;
+				}
 				 
 					if(cmd[0].equals("print") || cmd[0].equals("p"))
 					{
@@ -293,7 +318,11 @@ public class Debugger {
 										
 									} catch (BreakPointException e) {
 										// TODO Auto-generated catch block
-										System.out.println("breakpoint reached at "+ cmd[1]);
+										System.out.println(e.getMsg());
+										body = e.getStm();
+									}catch (AssertionException e) {
+										// TODO Auto-generated catch block
+										System.out.println(e.getMsg());
 										body = e.getStm();
 									}
 									if(body == null)
@@ -463,7 +492,7 @@ public class Debugger {
 	/*
 	 * should re-execute following the monitor 
 	 * **/
-	private static void replay() throws BreakPointException
+	private static void replay() throws BreakPointException, AssertionException
 	{
 		ArrayList<String> to_iterate = monitor.getThreadList();
 		
@@ -576,7 +605,9 @@ public class Debugger {
 		{
 			stm = threadlist.get(it.next());
 			if(canMove(stm))
+			{
 				return false;
+			}
 		}
 		return true;
 	}
@@ -605,10 +636,18 @@ public class Debugger {
 					} catch (BreakPointException e) {
 					
 						stm = normalize(e.getStm(), t_id);
-						System.out.println(warning +" breakpoint reached at thread "+ t_id+"\n");
+						System.out.println(e.getMsg()+"\n");
 						threadlist.put(t_id, stm);
 						return;
 					}
+					catch (AssertionException e) {
+						
+						stm = normalize(e.getStm(), t_id);
+						System.out.println(warning +e.getMsg());
+						threadlist.put(t_id, stm);
+						return;
+					}
+					
 					threadlist.put(t_id, stm);
 					if(threadlist.size() > size)
 					{
@@ -652,7 +691,7 @@ public class Debugger {
 	}
 
 	//executes one step forward of a given thread
-	private static  IStatement execute(IStatement stm, String thread_name) throws BreakPointException
+	private static  IStatement execute(IStatement stm, String thread_name) throws BreakPointException, AssertionException
 	{
 		StatementType type = stm.getType();
 		ArrayList<IHistory> h = null;
@@ -666,6 +705,7 @@ public class Debugger {
 				//executing left member of the sequence
 				IStatement sx= null;
 				boolean rethrow = false;
+				String msg = "";
 				try{
 					sx= execute(seq.getSx(), thread_name);
 							
@@ -674,6 +714,7 @@ public class Debugger {
 					// we are sure it is a single stm break
 					sx = e.getStm();
 					rethrow = true;
+					msg = e.getMsg();
 				}
 					//it is a sequence with on top a breakpoint
 				if(sx == null)
@@ -694,7 +735,7 @@ public class Debugger {
 						seq.setSx(sx);
 						sx = seq;
 					}
-					throw new BreakPointException(sx);
+					throw new BreakPointException(sx,msg);
 				}
 				seq.setSx(sx);
 				return seq;
@@ -891,18 +932,20 @@ public class Debugger {
 				//putting a trailing ESC to delimit the let scope
 				return new Sequence(let.getStm(), new Esc());			
 			}
-			case IF:
+			case ASSERT:
 			{
 				String guard = null;
-				Conditional cond = (Conditional) stm;
+				Assert ass = (Assert) stm;
 				boolean boolguard = false;
 				IStatement ret =null;
 				
-				if(cond.getGuard().getType() == ValueType.ID)
+				if(ass.getGuard().getType() == ValueType.ID)
 				{
-					guard = ((SimpleId)cond.getGuard()).getId();
+					guard = ((SimpleId)ass.getGuard()).getId();
 					
 					IValue val =  lookupVar(guard);
+					//here is a constant value
+					System.out.println("-->"+guard +" "+ val);
 					BoolValue e = (BoolValue)val;
 					if(val != null && val.getType() == ValueType.BOOLEAN)
 					{
@@ -916,7 +959,68 @@ public class Debugger {
 						}
 						else
 						{
-							System.out.println(error+" non boolean value for "+guard);
+							//System.out.println(error+" non boolean value for "+guard);
+							throw new BreakPointException(new Nil(), " non boolean value for "+guard);
+						}
+						return null;
+					}
+				}
+				else
+				{
+
+					boolguard  = evaluateExp((BoolExpr)ass.getGuard());
+					//it is a conditional expression
+				}
+				//
+				if (!boolguard)
+				{
+					throw new AssertionException(stm, "Assertion "+stm +" FAILED!!");
+					
+				}
+				else
+				{
+					//we pass the assertion and then it is like it has been executed 
+					if(!NO_MEMORY)
+					{
+						
+						h = history.get(thread_name);
+						h.add(new HistoryAssert(ass.getGuard()));
+						history.put(thread_name, h);
+
+					}
+					return new Nil();
+				}
+				
+			}
+			case IF:
+			{
+				String guard = null;
+				Conditional cond = (Conditional) stm;
+				boolean boolguard = false;
+				IStatement ret =null;
+				
+				if(cond.getGuard().getType() == ValueType.ID)
+				{
+					guard = ((SimpleId)cond.getGuard()).getId();
+					
+					IValue val =  lookupVar(guard);
+					//here is a constant value
+				
+					if(val != null && val.getType() == ValueType.BOOLEAN)
+					{
+						BoolValue e = (BoolValue)val;
+						boolguard=e.getValue();
+					}
+					else
+					{
+						if(val == null)
+						{
+							System.out.println(error+" undefined variable "+guard);
+						}
+						else
+						{
+//							System.out.println(error+" non boolean value for "+guard);
+							throw new BreakPointException(stm, error+" non boolean---- value for "+guard);
 						}
 						return null;
 					}
@@ -1016,7 +1120,7 @@ public class Debugger {
 					}
 					if(call.getParams().isEmpty())
 					{
-						return new Sequence(proc_def.getBody(), new Esc());
+						return new Sequence(proc_def.getBody().clone(), new Esc());
 					}
 					else
 					{
@@ -1070,7 +1174,7 @@ public class Debugger {
 						h = history.get(thread_name);
 						h.add(new HistoryBreak());
 						history.put(thread_name, h);
-							throw new BreakPointException(new Nil());
+							throw new BreakPointException(new Nil(),warning +" breakpoint reached at thread "+ thread_name);
 			}	
 			case NIL:	return stm;
 		
@@ -1120,6 +1224,18 @@ public class Debugger {
 					new_body = new Sequence(new BreakStatemet(), body);
 				}
 				break;
+			}
+			case ASSERT:
+			{
+				HistoryAssert log = (HistoryAssert)action;
+
+				if(body.getType() == StatementType.NIL)
+					new_body = new Assert(log.getGuard());
+				else{
+					new_body = new Sequence(new Assert(log.getGuard()), body);
+				}
+				break;
+				
 			}
 			case IF :{
 				HistoryIf log = (HistoryIf)action;
@@ -1617,8 +1733,8 @@ public class Debugger {
 		System.out.println("\t rollvariable (rv) id (rolls the creation of a variable)");
 		
 		System.out.println("\t run  (runs the program till the first breaktpoint or eventually terminates the execution)");
-		System.out.println("\t dump (d) (dumps the configuration)");
-		System.out.println("\t restore (restores a dumped configuration)");
+		System.out.println("\t dump (d) filename (dumps the configuration)");
+		System.out.println("\t restore filename (restores a dumped configuration)");
 		
 			
 		System.out.println("\t list (l) (displays all the available threads)");
@@ -1945,7 +2061,7 @@ public class Debugger {
 	
 	//dump of the entire configuration
 	@SuppressWarnings("unchecked")
-	private static void dump()
+	private static void dump(String filename)
 	{
 		HashMap<String, IValue> dstore=  new HashMap<String, IValue>();
 		Iterator<String> it = store.keySet().iterator();
@@ -1978,7 +2094,21 @@ public class Debugger {
 		
 	
 		dump = new DumpedConfiguration(dstore, dchans, dprocs, dthreadlist, dhistory);
-	}
+		FileOutputStream fileOut;
+		try {
+			fileOut = new FileOutputStream("./"+filename);
+			  ObjectOutputStream out = new ObjectOutputStream(fileOut);
+		         out.writeObject(dump);
+		         out.close();
+		         fileOut.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		       	}
 
 	
 	static boolean evaluateExp(BoolExpr exp)
@@ -2009,6 +2139,12 @@ public class Debugger {
 		{
 			String id = ((IntID) exp).getValue();
 			IValue val = lookupVar(id);
+			if(val == null)
+			{
+				//maybe a better handling
+				System.out.println(error + "undeclared variable "+id);
+				System.exit(-1);
+			}
 			//should not be null
 			switch (val.getType()){
 				case CONST:
@@ -2120,7 +2256,13 @@ public class Debugger {
 	//decides whether a thread can move forward : always true but when it is reading on an empty channel or it has already terminated (nil statement)
 	static private boolean canMove(IStatement stm)
 	{
+		//shoudl be recursive
 		switch (stm.getType()) {
+		case SEQUENCE : {
+					Sequence seq = (Sequence)stm;
+					return canMove(seq.getSx());
+			
+		}
 		case LET:
 				IValue val = ((Assignment)stm).getV();
 				if(val.getType() == ValueType.RECEIVE)

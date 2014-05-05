@@ -10,8 +10,14 @@
  ******************************************************************************/
 package language.util;
 
-public class Tuple<E,V> {
+import java.io.Serializable;
+
+public class Tuple<E,V>  implements Serializable{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4992619449902317403L;
 	private E first;
 	private V second;
 	public Tuple(E first, V second) {

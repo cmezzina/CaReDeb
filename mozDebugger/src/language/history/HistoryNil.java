@@ -10,6 +10,7 @@
  ******************************************************************************/
 package language.history;
 
+
 public class HistoryNil implements IHistory {
 
 	@Override

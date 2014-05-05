@@ -1,5 +1,6 @@
 package language.history;
 
+
 public class HistoryBreak implements IHistory {
 
 	static HistoryType type = HistoryType.BREAK;

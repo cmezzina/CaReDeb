@@ -1,5 +1,6 @@
 package language.value;
 
+
 public class IntID implements IntExp{
 	final static ValueType type = ValueType.INT_ID;
 	private String value ;

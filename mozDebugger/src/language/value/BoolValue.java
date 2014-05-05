@@ -10,6 +10,8 @@
  ******************************************************************************/
 package language.value;
 
+
+
 public class BoolValue implements IValue {
 	private boolean value;
 	

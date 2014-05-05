@@ -10,6 +10,7 @@
  ******************************************************************************/
 package language.history;
 
+
 public class HistoryReceive implements IHistory {
 
 	private String from;

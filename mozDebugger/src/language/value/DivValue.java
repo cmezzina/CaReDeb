@@ -1,5 +1,6 @@
 package language.value;
 
+
 public class DivValue implements BinaryIntExp{
 
 	final static ValueType type = ValueType.DIV;

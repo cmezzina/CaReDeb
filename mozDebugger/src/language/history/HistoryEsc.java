@@ -10,7 +10,8 @@
  ******************************************************************************/
 package language.history;
 
-public class HistoryEsc implements IHistory {
+
+public class HistoryEsc implements IHistory{
 
 	@Override
 	public HistoryType getType() {

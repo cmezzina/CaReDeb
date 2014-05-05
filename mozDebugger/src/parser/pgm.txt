@@ -1,31 +1,4 @@
-let uno = true in 
-let due = false in
-let x = port in 
-let z = port in
-
-thread 
-	{ send x uno} 
-end;
-thread 
-	{ send x due} 
-end;
-
-
-thread 
-	let r = { receive x} in 
-		{send z r}
-	end
-end;
-
-thread 
-	skip;let r = { receive z} in 
-		let tmp = {receive x} in skip end
-	end
-end	
-
-
-
-end
-end
-end 
+let uno = true in
+	<br>;
+	skip
 end
