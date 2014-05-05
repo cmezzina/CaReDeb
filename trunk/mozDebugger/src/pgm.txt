@@ -48,13 +48,34 @@ let incr = proc { }                     //increment procedure
                end
 end in
 
+let incr2 = proc { }                     //increment procedure
+                let aux = port in 
+		    {send a_ch aux};    //ask for acquiring the mutex
+		    	{send i_ch aux};       //will interact with the memorycell on aux
+           		{send aux t};          //asks for a read
+			let aux2 = port in   
+			    {send aux aux2};   //will receive the value on aux2
+		    let b = {receive aux} in   //mutex acquired
+			    let m = {receive aux2} in
+			    	let m1 = m+1 in
+			    	    {send i_ch aux};    //will interact again on aux
+			    	    {send aux f};       //asks for a write
+			    	    {send aux m1}       //sends the new value
+				end
+        		    end
+			end;
+                        {send r_ch aux}                 //mutex released
+		    end
+               end
+end in
+
 let thread1 = proc { }
                       {incr}
 end in
 
 
 let thread2 = proc { }
-                      {incr}
+                      {incr2}
 end in
 
 thread {memory_cell zero i_ch} end;
@@ -68,6 +89,7 @@ let j= {receive join} in skip end;
 {send aux_main aux_main2};            //will receive the value on aux_main2
 let x = {receive aux_main2} in         
     assert (x==two) 
+end
 end
 end
 end
