@@ -286,7 +286,14 @@ public class Debugger {
 					chans = dump.getChans();
 					store = dump.getStore();
 					threadlist = dump.getThreadlist();
+					expressions = dump.getExpressions();
+					thread_child = dump.getThread_child();
+					thread_chan = dump.getThread_chan();
+					parenthood = dump.getParenthood();
+					variables = dump.getVariables();
+					pc = dump.getPc(); 
 					System.out.println(".... restored configuration " + filename +"\n");
+					System.out.println(variables);
 					continue;
 				}
 				 
@@ -716,6 +723,12 @@ public class Debugger {
 					rethrow = true;
 					msg = e.getMsg();
 				}
+				catch (AssertionException e) {
+					// we are sure it is a single stm break
+					sx = e.getStm();
+					rethrow = true;
+					msg = e.getMsg();
+				}
 					//it is a sequence with on top a breakpoint
 				if(sx == null)
 					return null;
@@ -960,7 +973,7 @@ public class Debugger {
 						else
 						{
 							//System.out.println(error+" non boolean value for "+guard);
-							throw new BreakPointException(new Nil(), " non boolean value for "+guard);
+							throw new AssertionException(stm, " non boolean value for "+guard);
 						}
 						return null;
 					}
@@ -2092,8 +2105,47 @@ public class Debugger {
 			dhistory.put(key, (ArrayList<IHistory>) history.get(key).clone());
 		}
 		
-	
-		dump = new DumpedConfiguration(dstore, dchans, dprocs, dthreadlist, dhistory);
+		HashMap<String, IValue> dexp = new HashMap<String, IValue>();
+		ith = expressions.keySet().iterator();
+		while(ith.hasNext())
+		{
+			key = ith.next();
+			dexp.put(key, expressions.get(key).clone());
+		}
+		
+		/*the copying here are useless we can use directly clone on the structure*/
+		HashMap<String, Integer> dthread_child = new HashMap<String, Integer>();
+		ith = thread_child.keySet().iterator();
+		while(ith.hasNext())
+		{
+			key = ith.next();
+			dthread_child.put(key, thread_child.get(key));
+		}
+		
+		HashMap<String, Integer> dthread_chan =  new HashMap<String, Integer>();
+		ith = thread_chan.keySet().iterator();
+		while(ith.hasNext())
+		{
+			key = ith.next();
+			dthread_chan.put(key, thread_chan.get(key));
+		}
+		
+		HashMap<String,Tuple<String,Integer>> dparenthood = new HashMap<String, Tuple<String,Integer>>();
+		ith = parenthood.keySet().iterator();
+		while(ith.hasNext())
+		{
+			key = ith.next();
+			dparenthood.put(key, parenthood.get(key));
+		}
+		HashMap<String,Tuple<String,Integer>> dvariables = new HashMap<String, Tuple<String,Integer>>();
+		ith = variables.keySet().iterator();
+		while(ith.hasNext())
+		{
+			key = ith.next();
+			dvariables.put(key, variables.get(key));
+		}
+		dump = new DumpedConfiguration(dstore, dchans, dprocs, dthreadlist, dhistory, dexp, dthread_child, 
+				dthread_chan, dparenthood, dvariables, pc);
 		FileOutputStream fileOut;
 		try {
 			fileOut = new FileOutputStream("./"+filename);
