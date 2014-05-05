@@ -10,6 +10,7 @@
  ******************************************************************************/
 package language.history;
 
+
 public class HistorySkip implements IHistory {
 
 	private int instruction;

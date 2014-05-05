@@ -10,7 +10,9 @@
  ******************************************************************************/
 package language.history;
 
-public interface IHistory extends Cloneable{
+import java.io.Serializable;
+
+public interface IHistory extends Cloneable,   Serializable{
 	public HistoryType getType();
 	public IHistory clone();
 	

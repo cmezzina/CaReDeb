@@ -11,6 +11,7 @@
 package language.value;
 
 
+
 public class Receive implements IValue {
 
 	private String from;

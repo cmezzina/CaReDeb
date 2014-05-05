@@ -10,6 +10,7 @@
  ******************************************************************************/
 package language.history;
 
+
 public class HistoryThread implements IHistory {
 
 	private String thread_id;

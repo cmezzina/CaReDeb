@@ -1,5 +1,6 @@
 package language.value;
 
+
 public class MulValue implements BinaryIntExp{
 
 	final static ValueType type = ValueType.MUL;

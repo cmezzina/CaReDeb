@@ -10,6 +10,7 @@
  ******************************************************************************/
 package language.util;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,8 +20,12 @@ import java.util.List;
 import language.value.IValue;
 import language.value.SimpleId;
 
-public class Channel {
+public class Channel implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8231922135871012004L;
 	//the first element in the channel is the last one inserted
 	
 	//value, sender

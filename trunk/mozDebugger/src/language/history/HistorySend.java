@@ -10,6 +10,7 @@
  ******************************************************************************/
 package language.history;
 
+
 public class HistorySend implements IHistory {
 
 	private String chan;

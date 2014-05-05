@@ -10,6 +10,8 @@
  ******************************************************************************/
 package language.history;
 
+import java.io.Serializable;
+
 import language.statement.IStatement;
 import language.value.IValue;
 

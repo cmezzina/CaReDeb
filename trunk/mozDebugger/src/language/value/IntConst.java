@@ -1,5 +1,6 @@
 package language.value;
 
+
 public class IntConst implements IntExp {
 
 	final static ValueType type = ValueType.CONST;

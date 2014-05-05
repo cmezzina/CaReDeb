@@ -1,5 +1,6 @@
 package language.util;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -7,8 +8,12 @@ import language.history.IHistory;
 import language.statement.IStatement;
 import language.value.IValue;
 
-public class DumpedConfiguration {
+public class DumpedConfiguration implements Serializable{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private HashMap<String, IValue> store;
 	private HashMap<String, Channel> chans ;
 	//procedure store

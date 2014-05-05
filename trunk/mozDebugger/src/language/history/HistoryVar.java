@@ -10,6 +10,7 @@
  ******************************************************************************/
 package language.history;
 
+
 public class HistoryVar implements IHistory {
 
 	private String id;

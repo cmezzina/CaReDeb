@@ -11,5 +11,5 @@
 package language.statement;
 
 public enum StatementType {
-	SEQUENCE, LET, SKIP, NIL, SPAWN, SEND ,IF, INVOKE, ESC, BREAK
+	SEQUENCE, LET, SKIP, NIL, SPAWN, SEND ,IF, INVOKE, ESC, BREAK, ASSERT
 }

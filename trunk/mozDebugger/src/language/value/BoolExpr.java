@@ -1,4 +1,6 @@
 package language.value;
+
+
 /** this class is used for equality tests on integer expressions**/
 public class BoolExpr implements IValue{
 

@@ -10,7 +10,9 @@
  ******************************************************************************/
 package language.statement;
 
-public interface IStatement extends Cloneable{
+import java.io.Serializable;
+
+public interface IStatement extends Cloneable, Serializable{
 
 	StatementType getType();
 	

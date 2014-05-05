@@ -1,7 +1,86 @@
-let a = true in
-	let x = port in
-		let y = port in
-			{send x y}; {send y a}
-		end
-	end
-end	
+let t = true in
+let f= false in
+let zero = 0 in
+let two = 2 in
+let i_ch = port in
+let a_ch = port in
+let r_ch = port in
+let join = port in
+let aux_main = port in
+let aux_main2 = port in   
+let memory_cell = proc {n inch}            //memory cell storing integer n, receiving requests on channel inch
+                              let c1 = {receive inch} in
+                              	  let read = {receive c1} in //true for read, false for write
+                              	      if read then
+                                          //receives a channel on which tu send the value 
+				      	  let c2 = {receive c1} in {send c2 n} end ; {memory_cell n inch}
+                                      else 
+                                          //receives the new value
+                                          let newn = {receive c1} in {memory_cell newn inch} end
+                                      end
+                                  end
+                              end
+end in
+
+let mutex = proc {acq_ch rel_ch}        // mutex with channel acq_ch for acquire, rel_ch for release
+                   let c2 = {receive acq_ch} in {send c2 t} end; //receives a channel for answering
+                   let c3 = {receive rel_ch} in {mutex acq_ch rel_ch} end
+end in
+
+let incr = proc { }                     //increment procedure
+                let aux = port in 
+		    {send a_ch aux};    //ask for acquiring the mutex
+		    let b = {receive aux} in   //mutex acquired
+		    	{send i_ch aux};       //will interact with the memorycell on aux
+           		{send aux t};          //asks for a read
+			let aux2 = port in   
+			    {send aux aux2};   //will receive the value on aux2
+			    let m = {receive aux2} in
+			    	let m1 = m+1 in
+			    	    {send i_ch aux};    //will interact again on aux
+			    	    {send aux f};       //asks for a write
+			    	    {send aux m1}       //sends the new value
+				end
+        		    end
+			end;
+                        {send r_ch aux}                 //mutex released
+		    end
+               end
+end in
+
+let thread1 = proc { }
+                      {incr}
+end in
+
+
+let thread2 = proc { }
+                      {incr}
+end in
+
+thread {memory_cell zero i_ch} end;
+thread {mutex a_ch r_ch} end;
+thread {thread1}; {send join t} end;
+thread {thread2}; {send join t} end;
+let j= {receive join} in skip end;    //waits for termination of the two threads
+let j= {receive join} in skip end;
+{send i_ch aux_main};                 //will interact with the memorycell on aux_main
+{send aux_main t};                    //asks for a read
+{send aux_main aux_main2};            //will receive the value on aux_main2
+let x = {receive aux_main2} in         
+    assert (x==two) 
+end
+end
+end
+end
+end
+end
+end
+end
+end
+end
+end
+end
+end
+end
+end
+end
