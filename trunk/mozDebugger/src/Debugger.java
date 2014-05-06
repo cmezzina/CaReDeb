@@ -293,7 +293,6 @@ public class Debugger {
 					variables = dump.getVariables();
 					pc = dump.getPc(); 
 					System.out.println(".... restored configuration " + filename +"\n");
-					System.out.println(variables);
 					continue;
 				}
 				 
