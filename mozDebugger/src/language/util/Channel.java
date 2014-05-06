@@ -151,13 +151,14 @@ public class Channel implements Serializable {
 	public HashMap<String, Integer> getReaders(String thread)
 	{
 		HashMap<String,Integer> ret= new HashMap<String, Integer>();
-		Iterator<Tuple<Tuple<IValue,String>,String>> it= story.iterator();
+		Iterator<Tuple<Tuple<IValue,String>,String>> it= story.iterator(); 
 		LinkedList<Integer> tmp_reader = new LinkedList<Integer>(pc_reader);
 
 		while(it.hasNext())
 		{	
 			Tuple<Tuple<IValue, String>, String> val = it.next();
-			int gamma = tmp_reader.removeLast();
+			//int gamma = tmp_reader.removeLast();
+			int gamma = tmp_reader.remove(0);
 			
 			String sender = val.getFirst().getSecond();
 		
@@ -237,7 +238,8 @@ public class Channel implements Serializable {
 				break;
 
 			Tuple<Tuple<IValue, String>, String> val = it.next();
-			int gamma = tmp_reader.removeLast();
+			//int gamma = tmp_reader.removeLast();
+			int gamma = tmp_reader.remove(0);
 			
 			if(!ret.containsKey(val.getSecond()) || ret.get(val.getSecond()) > gamma)
 			{
