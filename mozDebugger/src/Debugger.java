@@ -1744,7 +1744,7 @@ public class Debugger {
 		System.out.println("\t rollthread (rt) thread_name (rolls the creation of a thread)");
 		System.out.println("\t rollvariable (rv) id (rolls the creation of a variable)");
 		
-		System.out.println("\t run  (runs the program till the first breaktpoint or eventually terminates the execution)");
+		System.out.println("\t run  (runs the program till the first breaktpoint/false assertion or eventually terminates the execution)");
 		System.out.println("\t dump (d) filename (dumps the configuration)");
 		System.out.println("\t restore filename (restores a dumped configuration)");
 		
@@ -2172,8 +2172,14 @@ public class Debugger {
 		case LT:
 			 ret = (evaluateExp(exp.getSx()) < evaluateExp(exp.getDx()));
 			 break;
+		case LE:
+			 ret = (evaluateExp(exp.getSx()) <= evaluateExp(exp.getDx()));
+			 break;	 
 		case GT:
 			 ret = (evaluateExp(exp.getSx()) > evaluateExp(exp.getDx()));
+			 break;
+		case GE:
+			 ret = (evaluateExp(exp.getSx()) >= evaluateExp(exp.getDx()));
 			 break;
 			
 		default:

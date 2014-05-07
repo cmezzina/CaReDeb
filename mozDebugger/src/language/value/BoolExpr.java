@@ -57,6 +57,13 @@ public class BoolExpr implements IValue{
 		else
 			if(this.op == BoolOp.LT)
 				op=" < ";
+		else
+			if(this.op == BoolOp.LE)
+				op=" <= ";
+			else
+				if(this.op == BoolOp.GE)
+					op=" >= ";
+				
 		return sx.toString() + op + dx.toString();
 	
 	}
