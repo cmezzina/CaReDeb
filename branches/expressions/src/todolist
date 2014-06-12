@@ -1,0 +1,10 @@
+improve parsing of integer expressions ...
+add check that all variables are bound or generate error + line ...
+better handling of new id
+better check of ids lookup
+command to print both story and stm of a pgm and store??
+polish code
+add more errors handling
+sets for channels??
+better check on #params and command (out of bound exception)
+pc/gamma should be local to threads (partial order)
