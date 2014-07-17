@@ -8,7 +8,7 @@
  * Contributors:
  *     Claudio Antares Mezzina - initial API and implementation
  ******************************************************************************/
-package expection;
+package exception;
 
 import java.util.HashMap;
 
