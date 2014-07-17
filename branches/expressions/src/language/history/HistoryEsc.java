@@ -10,27 +10,28 @@
  ******************************************************************************/
 package language.history;
 
+public class HistoryEsc implements IHistory {
 
-public class HistoryEsc implements IHistory{
+    @Override
+    public HistoryType getType() {
+        // TODO Auto-generated method stub
+        return HistoryType.ESC;
+    }
 
-	@Override
-	public HistoryType getType() {
-		// TODO Auto-generated method stub
-		return HistoryType.ESC;
-	}
-	public String toString()
-	{
-	//	return "esc";
-		return "";
-	}
+    @Override
+    public String toString() {
+        // return "esc";
+        return "";
+    }
 
-	public IHistory clone()
-	{
-		return new HistoryEsc();
-	}
-	@Override
-	public int getInstruction() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public IHistory clone() {
+        return new HistoryEsc();
+    }
+
+    @Override
+    public int getInstruction() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 }

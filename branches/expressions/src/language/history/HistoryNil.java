@@ -10,28 +10,27 @@
  ******************************************************************************/
 package language.history;
 
-
 public class HistoryNil implements IHistory {
 
-	@Override
-	public HistoryType getType() {
-		// TODO Auto-generated method stub
-		return HistoryType.NIL;
-	}
+    @Override
+    public HistoryType getType() {
+        // TODO Auto-generated method stub
+        return HistoryType.NIL;
+    }
 
-	public String toString()
-	{
-		return "nil";
-	}
-	
-	public IHistory clone()
-	{
-		return new HistoryNil();
-	}
+    @Override
+    public String toString() {
+        return "nil";
+    }
 
-	@Override
-	public int getInstruction() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public IHistory clone() {
+        return new HistoryNil();
+    }
+
+    @Override
+    public int getInstruction() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 }

@@ -10,26 +10,29 @@
  ******************************************************************************/
 package language.history;
 
-
 public class HistorySkip implements IHistory {
 
-	private int instruction;
+    private int instruction;
 
-	public HistoryType getType() {
-		// TODO Auto-generated method stub
-		return HistoryType.SKIP;
-	}
-	public String toString()
-	{
-		return "skip";
-	}
-	public IHistory clone()
-	{
-		return new HistorySkip();
-	}
-	@Override
-	public int getInstruction() {
-		// TODO Auto-generated method stub
-		return instruction;
-	}
+    @Override
+    public HistoryType getType() {
+        // TODO Auto-generated method stub
+        return HistoryType.SKIP;
+    }
+
+    @Override
+    public String toString() {
+        return "skip";
+    }
+
+    @Override
+    public IHistory clone() {
+        return new HistorySkip();
+    }
+
+    @Override
+    public int getInstruction() {
+        // TODO Auto-generated method stub
+        return instruction;
+    }
 }

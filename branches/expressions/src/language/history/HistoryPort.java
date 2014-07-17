@@ -10,42 +10,41 @@
  ******************************************************************************/
 package language.history;
 
-
 public class HistoryPort implements IHistory {
 
-	private String port_name;
-	
-	public HistoryPort(String port_name) {
-		super();
-		this.port_name = port_name;
-	}
+    private String port_name;
 
-	public String getPort_name() {
-		return port_name;
-	}
+    public HistoryPort(String port_name) {
+        super();
+        this.port_name = port_name;
+    }
 
-	public void setPort_name(String port_name) {
-		this.port_name = port_name;
-	}
+    public String getPort_name() {
+        return port_name;
+    }
 
-	@Override
-	public HistoryType getType() {
-		return HistoryType.PORT;
-	}
+    public void setPort_name(String port_name) {
+        this.port_name = port_name;
+    }
 
-	public String toString ()
-	{
-		return "new port "+port_name;
-	}
-	
-	public IHistory clone()
-	{
-		return new HistoryPort(port_name);
-	}
+    @Override
+    public HistoryType getType() {
+        return HistoryType.PORT;
+    }
 
-	@Override
-	public int getInstruction() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public String toString() {
+        return "new port " + port_name;
+    }
+
+    @Override
+    public IHistory clone() {
+        return new HistoryPort(port_name);
+    }
+
+    @Override
+    public int getInstruction() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 }

@@ -11,36 +11,40 @@
 package language.history;
 
 public class HistoryProc implements IHistory {
-	private String id;
-	
-	public HistoryProc(String id) {
-		super();
-		this.id = id;
-	}
-	public String getId() {
-		return id;
-	}
-	public void setId(String id) {
-		this.id = id;
-	}
-	@Override
-	public HistoryType getType() {
-		// TODO Auto-generated method stub
-		return HistoryType.PROCEDURE;
-	}
+    private String id;
 
-	public String toString()
-	{
-		return "new function "+id;
-	}
-	
-	public IHistory clone()
-	{
-		return new HistoryProc(id);
-	}
-	@Override
-	public int getInstruction() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    public HistoryProc(String id) {
+        super();
+        this.id = id;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    @Override
+    public HistoryType getType() {
+        // TODO Auto-generated method stub
+        return HistoryType.PROCEDURE;
+    }
+
+    @Override
+    public String toString() {
+        return "new function " + id;
+    }
+
+    @Override
+    public IHistory clone() {
+        return new HistoryProc(id);
+    }
+
+    @Override
+    public int getInstruction() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 }

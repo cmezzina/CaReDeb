@@ -10,42 +10,47 @@
  ******************************************************************************/
 package language.history;
 
-
 public class HistoryVar implements IHistory {
 
-	private String id;
-	private int instruction;
+    private String id;
+    private int instruction;
 
-	public HistoryVar(String id, int instruction) {
-		super();
-		this.instruction=instruction;
-		this.id = id;
-	}
-	public String getId() {
-		return id;
-	}
-	public void setId(String id) {
-		this.id = id;
-	}
-	@Override
-	public HistoryType getType() {
-		// TODO Auto-generated method stub
-		return HistoryType.VAR;
-	}
+    public HistoryVar(String id, int instruction) {
+        super();
+        this.instruction = instruction;
+        this.id = id;
+    }
 
-	public String toString()
-	{
-		return "new variable "+id;
-	}
-	
-	public int getInstruction() {
-		return instruction;
-	}
-	public void setInstruction(int instruction) {
-		this.instruction = instruction;
-	}
-	public IHistory clone()
-	{
-		return new HistoryVar(id, instruction);
-	}
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    @Override
+    public HistoryType getType() {
+        // TODO Auto-generated method stub
+        return HistoryType.VAR;
+    }
+
+    @Override
+    public String toString() {
+        return "new variable " + id;
+    }
+
+    @Override
+    public int getInstruction() {
+        return instruction;
+    }
+
+    public void setInstruction(int instruction) {
+        this.instruction = instruction;
+    }
+
+    @Override
+    public IHistory clone() {
+        return new HistoryVar(id, instruction);
+    }
 }
