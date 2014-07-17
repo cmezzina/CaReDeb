@@ -9,7 +9,9 @@
  *     Claudio Antares Mezzina - initial API and implementation
  *     Ivan Lanese - implementation
  *     Elena Giachino - implementation
+ *     Davide Riccardo Caliendo - implementation
  ******************************************************************************/
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -56,29 +58,28 @@ import language.util.Channel;
 import language.util.DumpedConfiguration;
 import language.util.Monitor;
 import language.util.Tuple;
-import language.value.BinaryIntExp;
-import language.value.BoolExpr;
+import language.util.LambdaIdLookup;
 import language.value.BoolValue;
-import language.value.DivValue;
 import language.value.IValue;
-import language.value.IntConst;
-import language.value.IntExp;
-import language.value.IntID;
-import language.value.ModValue;
-import language.value.MulValue;
 import language.value.PortCreation;
 import language.value.Procedure;
 import language.value.Receive;
-import language.value.SimpleId;
-import language.value.SubValue;
-import language.value.SumValue;
-import language.value.ValueType;
+import language.value.expression.Expression;
+import language.value.expression.SimpleId;
+import language.value.type.BoolType;
+import language.value.type.PortType;
+import language.value.type.ProcedureType;
+import language.value.type.ReceiveType;
+import language.value.type.Type;
 import parser.ParseException;
 import parser.mozParser;
 import exception.AssertionException;
 import exception.BreakPointException;
 import exception.ChildMissingException;
+import exception.ExpressionErrorException;
+import exception.RuntimeException;
 import exception.WrongElementChannel;
+import exception.WrongIdException;
 
 public class Debugger {
 
@@ -106,7 +107,7 @@ public class Debugger {
     // channel/port store
     static HashMap<String, Channel> chans = new HashMap<String, Channel>();
     // procedure store
-    static HashMap<String, IValue> procs = new HashMap<String, IValue>();
+    static HashMap<String, Procedure> procs = new HashMap<String, Procedure>();
     // thread pool
     static HashMap<String, IStatement> threadlist = new HashMap<String, IStatement>();
     static HashMap<String, Integer> thread_child = new HashMap<String, Integer>();
@@ -198,10 +199,10 @@ public class Debugger {
                     try {
                         replay();
                     } catch (BreakPointException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     } catch (AssertionException e) {
-                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    } catch (RuntimeException e) {
                         e.printStackTrace();
                     }
                 }
@@ -261,7 +262,6 @@ public class Debugger {
                     try {
                         dump = (DumpedConfiguration) in.readObject();
                     } catch (ClassNotFoundException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                     in.close();
@@ -301,12 +301,7 @@ public class Debugger {
                             try {
                                 body = execute(body, cmd[1]);
 
-                            } catch (BreakPointException e) {
-                                // TODO Auto-generated catch block
-                                System.out.println(e.getMsg());
-                                body = e.getStm();
-                            } catch (AssertionException e) {
-                                // TODO Auto-generated catch block
+                            } catch (RuntimeException e) {
                                 System.out.println(e.getMsg());
                                 body = e.getStm();
                             }
@@ -384,7 +379,6 @@ public class Debugger {
                         if (cmd.length > 2) {
                             n = Integer.parseInt(cmd[2]);
                         }
-
                         rollReceive(cmd[1], n);
                     } catch (NumberFormatException e) {
                         System.out.println(warning + "invalid number\n");
@@ -437,7 +431,6 @@ public class Debugger {
             }
 
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         System.out.println("exiting from debugging ");
@@ -447,7 +440,7 @@ public class Debugger {
     /*
      * should re-execute following the monitor *
      */
-    private static void replay() throws BreakPointException, AssertionException {
+    private static void replay() throws RuntimeException {
         ArrayList<String> to_iterate = monitor.getThreadList();
 
         while (to_iterate.size() > 0) {
@@ -460,8 +453,8 @@ public class Debugger {
 
                             Assignment let = (Assignment) stm;
                             IValue val = let.getV();
-                            ValueType valuetype = val.getType();
-                            if (valuetype == ValueType.RECEIVE) {
+                            Type valuetype = val.getType();
+                            if (valuetype == ReceiveType.getInstance()) {
                                 // we should check if it is our turn to read
                                 Receive rec = (Receive) val;
                                 String from = rec.getFrom();
@@ -564,16 +557,8 @@ public class Debugger {
                     System.out.println(" executing " + t_id);
 
                     try {
-
                         stm = execute(threadlist.get(t_id), t_id);
-                    } catch (BreakPointException e) {
-
-                        stm = normalize(e.getStm(), t_id);
-                        System.out.println(e.getMsg() + "\n");
-                        threadlist.put(t_id, stm);
-                        return;
-                    } catch (AssertionException e) {
-
+                    } catch (RuntimeException e) {
                         stm = normalize(e.getStm(), t_id);
                         System.out.println(warning + e.getMsg());
                         threadlist.put(t_id, stm);
@@ -593,6 +578,22 @@ public class Debugger {
                 .println(warning + " all threads are terminated or blocked\n");
     }
 
+    private static IValue evalExpression(final IStatement stm, Expression exp) throws RuntimeException {
+        IValue result = null;
+        result = ((Expression)exp).getValue(new LambdaIdLookup<String, IValue>() {
+            public IValue caller(String id) throws WrongIdException {
+                IValue look;
+                look = lookupVar(id);
+                if (look == null)
+                    throw new WrongIdException(stm, "undefined variable " + id);
+                return look;
+            }           
+        });
+        if (result == null)
+            throw new ExpressionErrorException(stm, "unable to evaluate the previous expression " + exp);
+        return result;
+    }
+    
     // logs and executes all the esc in a sequence at once. Stops when there is
     // a statement different from esc
     private static IStatement normalize(IStatement stm, String thread_name) {
@@ -620,7 +621,7 @@ public class Debugger {
 
     // executes one step forward of a given thread
     private static IStatement execute(IStatement stm, String thread_name)
-            throws BreakPointException, AssertionException {
+            throws RuntimeException {
         StatementType type = stm.getType();
         ArrayList<IHistory> h = null;
 
@@ -631,21 +632,16 @@ public class Debugger {
                 // executing left member of the sequence
                 IStatement sx = null;
                 boolean rethrow = false;
-                String msg = "";
+                RuntimeException ecopy = null;
                 try {
                     sx = execute(seq.getSx(), thread_name);
-
-                } catch (BreakPointException e) {
+                } catch (RuntimeException e) {
                     // we are sure it is a single stm break
+                    ecopy = e;
                     sx = e.getStm();
                     rethrow = true;
-                    msg = e.getMsg();
-                } catch (AssertionException e) {
-                    // we are sure it is a single stm break
-                    sx = e.getStm();
-                    rethrow = true;
-                    msg = e.getMsg();
                 }
+                
                 // it is a sequence with on top a breakpoint
                 if (sx == null) {
                     return null;
@@ -664,13 +660,12 @@ public class Debugger {
                         seq.setSx(sx);
                         sx = seq;
                     }
-                    throw new BreakPointException(sx, msg);
+                    ecopy.setStm(sx);
+                    throw ecopy;
                 }
                 seq.setSx(sx);
                 return seq;
-
             }
-
             case SPAWN: {
                 ThreadStm th = (ThreadStm) stm;
 
@@ -701,9 +696,27 @@ public class Debugger {
                 // renaming variable
                 String new_id = generateVarId(old_id);
 
-                ValueType valuetype = val.getType();
-                switch (valuetype) {
-                    case RECEIVE: {
+                if (val instanceof Expression) {
+                    Expression expr = (Expression) val;
+                    IValue result;
+                    expressions.put(new_id, val);
+                    result = evalExpression(stm, expr);
+                    System.out.println(val + "  ==>   " + result);
+                    System.out.println("putting in store variable "
+                            + new_id + " = " + result);
+                    store.put(new_id, result);
+                    int gamma = pc++;
+                    variables.put(new_id, new Tuple<String, Integer>(
+                            thread_name, gamma));
+                    if (!NO_MEMORY) {
+                        h = history.get(thread_name);
+                        h.add(new HistoryVar(new_id, gamma));
+                    }
+                } else {
+                    /* For now receive, port, and procedure are not treated and implemented
+                     * as expressions
+                     */
+                    if(val.getType() == ReceiveType.getInstance()){
                         Receive rec = (Receive) val;
                         String from = rec.getFrom();
                         String xi = lookupChan(from);
@@ -725,28 +738,10 @@ public class Debugger {
                                 h.add(new HistoryReceive(from, new_id, gamma));
                             }
                         } else {
-                            System.out.println(error + "unrecognized channel "
+                            throw new WrongIdException(stm, "unrecognized channel "
                                     + from);
-                            System.out.println();
-                            System.exit(-1);
-                            // return null;
                         }
-                        break;
-                    }
-                    case BOOLEAN: {
-                        System.out.println("putting in store variable "
-                                + new_id);
-                        store.put(new_id, val);
-                        int gamma = pc++;
-                        variables.put(new_id, new Tuple<String, Integer>(
-                                thread_name, gamma));
-                        if (!NO_MEMORY) {
-                            h = history.get(thread_name);
-                            h.add(new HistoryVar(new_id, gamma));
-                        }
-                        break;
-                    }
-                    case PORT: {
+                    } else if (val.getType() == PortType.getInstance()) { 
                         String xi = generateChanId(thread_name);
                         System.out.println("generating channel " + new_id
                                 + " --> " + xi);
@@ -756,92 +751,22 @@ public class Debugger {
                             h = history.get(thread_name);
                             h.add(new HistoryPort(new_id));
                         }
-                        break;
-                    }
-                    case PROCEDURE: {
+                    } else if (val.getType() == ProcedureType.getInstance()) {
                         // Procedure prc = (Procedure)val;
                         String lambda = generateProcId();
                         System.out.println("generating procedure " + new_id
                                 + " --> " + lambda);
                         val.rename(old_id, new_id);
                         store.put(new_id, new SimpleId(lambda));
-                        procs.put(lambda, val);
+                        procs.put(lambda, (Procedure)val);
 
                         if (!NO_MEMORY) {
                             h = history.get(thread_name);
                             h.add(new HistoryProc(new_id));
                         }
-                        break;
+                    } else {
+                        throw new RuntimeException(stm, "non recognized let expression or value");
                     }
-                    case INT_ID: {
-                        // alias we should infer the variable type
-                        IntID var = (IntID) val;
-                        IValue id = lookupVar(var.getValue());
-                        System.out.println(var + "   " + id);
-
-                        // if it is a variable
-                        if (id != null) {
-                            // maybe cloning??
-                            store.put(new_id, id);
-                            System.out.println("putting in store variable "
-                                    + new_id + " = " + id);
-                            h = history.get(thread_name);
-
-                        } else {
-                            String xi = lookupChan(var.getValue());
-                            // it is a channel
-                            if (xi != null && chans.containsKey(xi)) {
-                                store.put(new_id, new SimpleId(xi));
-                                System.out.println("putting in store variable "
-                                        + new_id + " = " + id);
-                                h = history.get(thread_name);
-                            } else {
-                                // xi = lookupProc(var.getValue());
-                                if (xi != null && procs.containsKey(xi)) {
-                                    store.put(new_id, new SimpleId(xi));
-                                    System.out
-                                            .println("putting in store variable "
-                                                    + new_id + " = " + id);
-                                    h = history.get(thread_name);
-
-                                } else {
-                                    System.out
-                                            .println("SOMETHING BAD HAPPENED IN THE EXPRESSION ....");
-                                }
-                            }
-
-                        }
-                        int gamma = pc++;
-                        variables.put(new_id, new Tuple<String, Integer>(
-                                thread_name, gamma));
-                        h.add(new HistoryVar(new_id, gamma));
-
-                        break;
-                    }
-                    case SUM:
-                    case MUL:
-                    case DIV:
-                    case MOD:
-                    case SUB:
-                    case CONST: {
-                        IntExp op = (IntExp) val;
-                        // saving expressions but consts
-                        if (!isConstantExp(op)) {
-                            expressions.put(new_id, op);
-                        }
-                        int result = evaluateExp(op);
-                        System.out.println("putting in store variable "
-                                + new_id + " = " + result);
-                        store.put(new_id, new IntConst(result));
-                        // TODO put something in the history
-                        h = history.get(thread_name);
-                        int gamma = pc++;
-                        variables.put(new_id, new Tuple<String, Integer>(
-                                thread_name, gamma));
-                        h.add(new HistoryVar(new_id, gamma));
-
-                    }
-                    // execute(let.getStm());
                 }
                 // renaming the body of a let statement
                 let.getStm().rename(old_id, new_id);
@@ -857,32 +782,20 @@ public class Debugger {
             case ASSERT: {
                 String guard = null;
                 Assert ass = (Assert) stm;
+                IValue result;
                 boolean boolguard = false;
-                if (ass.getGuard().getType() == ValueType.ID) {
-                    guard = ((SimpleId) ass.getGuard()).getId();
-
-                    IValue val = lookupVar(guard);
-                    // here is a constant value
-                    System.out.println("-->" + guard + " " + val);
-                    BoolValue e = (BoolValue) val;
-                    if (val != null && val.getType() == ValueType.BOOLEAN) {
-                        boolguard = e.getValue();
-                    } else {
-                        if (val == null) {
-                            System.out.println(error + " undefined variable "
-                                    + guard);
-                        } else {
-                            // System.out.println(error+" non boolean value for "+guard);
+                if (ass.getGuard() instanceof Expression) {
+                    result = evalExpression(stm, ((Expression)ass.getGuard()));
+                    System.out.println("-->" + guard + " " + result);
+                    if (result.getType() != BoolType.getInstance() ) {
                             throw new AssertionException(stm,
                                     " non boolean value for " + guard);
-                        }
-                        return null;
                     }
                 } else {
-
-                    boolguard = evaluateExp((BoolExpr) ass.getGuard());
-                    // it is a conditional expression
+                    throw new AssertionException(stm,
+                            " non expression value for " + guard);
                 }
+                boolguard = ((BoolValue)result).getTerm();
                 //
                 if (!boolguard) {
                     throw new AssertionException(stm, "Assertion " + stm
@@ -903,40 +816,20 @@ public class Debugger {
 
             }
             case IF: {
-                String guard = null;
                 Conditional cond = (Conditional) stm;
                 boolean boolguard = false;
                 IStatement ret = null;
-
-                if (cond.getGuard().getType() == ValueType.ID) {
-                    guard = ((SimpleId) cond.getGuard()).getId();
-
-                    IValue val = lookupVar(guard);
-                    // here is a constant value
-
-                    if (val != null && val.getType() == ValueType.BOOLEAN) {
-                        BoolValue e = (BoolValue) val;
-                        boolguard = e.getValue();
-                    } else {
-                        if (val == null) {
-                            System.out.println(error + " undefined variable "
-                                    + guard);
-                        } else {
-                            // System.out.println(error+" non boolean value for "+guard);
-                            throw new BreakPointException(stm, error
-                                    + " non boolean---- value for " + guard);
-                        }
-                        return null;
-                    }
-                } else {
-
-                    boolguard = evaluateExp((BoolExpr) cond.getGuard());
-                    // it is a conditional expression
+                String sguard = "";
+                IValue result;
+                result = evalExpression(stm, (Expression)cond.getGuard());
+                if (result.getType() != BoolType.getInstance()) {
+                    throw new BreakPointException(stm, "non boolean value for " + cond.getGuard().toString());
                 }
-
+                boolguard = ((BoolValue)result).getTerm();
+                sguard = ((Expression)cond.getGuard()).toString();
                 // we should lookup it btw
                 if (boolguard) {
-                    System.out.println("reducing to then (left) branch");
+                    System.out.println(sguard + " : reducing to then (left) branch");
                     if (!NO_MEMORY) {
                         h = history.get(thread_name);
                         h.add(new HistoryIf(cond.getGuard(), cond.getRight(),
@@ -944,7 +837,7 @@ public class Debugger {
                     }
                     ret = cond.getLeft();
                 } else {
-                    System.out.println("reducing to else (right) branch");
+                    System.out.println(sguard + " : reducing to else (right) branch");
                     if (!NO_MEMORY) {
                         h = history.get(thread_name);
                         h.add(new HistoryIf(cond.getGuard(), cond.getLeft(),
@@ -985,10 +878,7 @@ public class Debugger {
                     }
                     return new Nil();
                 } else {
-                    System.out.println(error + to + " is not a channel");
-                    System.out.println();
-                    // return null;
-                    System.exit(-1);
+                    throw new WrongIdException(stm, to + " is not a channel");
                 }
             }
             case INVOKE: {
@@ -1001,7 +891,7 @@ public class Debugger {
                  * simple ig e.g. a chan
                  */
                 SimpleId real_name = (SimpleId) store.get(call_id);
-                if (real_name != null && real_name.getType() == ValueType.ID) {
+                if (real_name != null) {
                     System.out.println("should execute procedure "
                             + real_name.getId());
                     Procedure proc_def = (Procedure) procs.get(real_name
@@ -1058,8 +948,7 @@ public class Debugger {
                 h = history.get(thread_name);
                 h.add(new HistoryBreak());
                 history.put(thread_name, h);
-                throw new BreakPointException(new Nil(), warning
-                        + " breakpoint reached at thread " + thread_name);
+                throw new BreakPointException(new Nil(), "breakpoint reached at thread " + thread_name);
             }
             case NIL:
                 return stm;
@@ -1114,9 +1003,9 @@ public class Debugger {
                 HistoryAssert log = (HistoryAssert) action;
 
                 if (body.getType() == StatementType.NIL) {
-                    new_body = new Assert(log.getGuard());
+                    new_body = new Assert((Expression)log.getGuard());
                 } else {
-                    new_body = new Sequence(new Assert(log.getGuard()), body);
+                    new_body = new Sequence(new Assert((Expression)log.getGuard()), body);
                 }
                 break;
 
@@ -1128,10 +1017,10 @@ public class Debugger {
                 if (log.isLeft()) {
 
                     // better check this part expecially if we need a clone ...
-                    new_body = new Conditional(log.getGuard(), new_body,
+                    new_body = new Conditional((Expression)log.getGuard(), new_body,
                             log.getBody());
                 } else {
-                    new_body = new Conditional(log.getGuard(), log.getBody(),
+                    new_body = new Conditional((Expression)log.getGuard(), log.getBody(),
                             new_body);
 
                 }
@@ -1165,7 +1054,7 @@ public class Debugger {
                 HistoryProc log = (HistoryProc) action;
                 if (store.containsKey(log.getId())) {
                     IValue val = store.remove(log.getId());
-                    if (val.getType() == ValueType.ID) {
+                    if (val instanceof SimpleId) {
                         String xi = ((SimpleId) val).getId();
                         IValue proc = null;
                         if ((proc = procs.get(xi)) != null) {
@@ -1188,7 +1077,7 @@ public class Debugger {
                 // to reverse a port creation the port should be empty
                 if (store.containsKey(log.getPort_name())) {
                     IValue val = store.remove(log.getPort_name());
-                    if (val.getType() == ValueType.ID) {
+                    if (val instanceof SimpleId) {
                         String xi = ((SimpleId) val).getId();
                         Channel chan = null;
                         if ((chan = chans.get(xi)) != null) {
@@ -1290,7 +1179,7 @@ public class Debugger {
                     // next = afterEsc(body);
                     // new_body = beforeEsc(body);
 
-                    if (val.getType() == ValueType.ID) {
+                    if (val instanceof SimpleId) {
                         new_body = new Send(log.getChan(),
                                 ((SimpleId) val).getId());
                         next = body;
@@ -1466,7 +1355,6 @@ public class Debugger {
                 } catch (ChildMissingException e) {
                     rollEnd(e.getChild());
                 }
-
             }
 
         }
@@ -1475,7 +1363,6 @@ public class Debugger {
     // forces backward a thread to the beginning causing the failure of its
     // caused actions
     private static void rollEnd(String thread_id) {
-
         while (history.get(thread_id).size() != 0) {
             try {
                 stepBack(thread_id);
@@ -1621,20 +1508,11 @@ public class Debugger {
     /* prints the status of an id, including threads */
     private static String printId(String id) {
         IValue val = store.get(id);
-        ValueType type;
+        Type t;
         if (val != null) {
-            type = val.getType();
-            switch (type) {
-                case BOOLEAN:
-                    // System.out.println(id + " = "+val);
-                    return val.toString();
-                case CONST:
-                    return val.toString();
-                case ID:
-                    // if ID it can be either a channel or a procedure or a
-                    // variable
-                    String xi = ((SimpleId) val).getId();
-                    Channel chan = chans.get(xi);
+            t = val.getType();
+            if (t == PortType.getInstance()) {
+                    Channel chan = chans.get(id);
                     // channel
                     if (chan != null) {
                         // System.out.println(id +" = " +
@@ -1642,14 +1520,16 @@ public class Debugger {
                         return printChan(chan.getValues());
                     } else {
                         // procedure
-                        IValue proc = procs.get(xi);
+                        Procedure proc = procs.get(id);
                         if (proc != null) {
                             return proc.toString();
                         } else {
-                            return printId(xi);
+                            return printId(id);
                         }
                     }
 
+            } else {
+                return val.toString();
             }
         } else {
             System.out.println("\n**invalid identifier: " + id);
@@ -1661,8 +1541,7 @@ public class Debugger {
     private static String printChan(List<Tuple<IValue, String>> queue) {
         String ret = " [";
         for (Tuple<IValue, String> ith : queue) {
-            ValueType type = ith.getFirst().getType();
-            if (type == ValueType.ID) {
+            if (ith.getFirst() instanceof SimpleId) {
                 String xi = ((SimpleId) ith.getFirst()).getId();
                 // variable
                 if (store.get(xi) != null) {
@@ -1687,7 +1566,7 @@ public class Debugger {
     static private boolean isChan(String id) {
         IValue val = null;
         if ((val = store.get(id)) != null) {
-            if (val.getType() == ValueType.ID) {
+            if (val instanceof SimpleId) {
                 String xi = ((SimpleId) val).getId();
                 if (store.get(xi) != null) {
                     return isChan(xi);
@@ -1708,8 +1587,9 @@ public class Debugger {
             return id;
         }
 
+        /* Recursive lookup of channel ids */
         if ((val = store.get(id)) != null) {
-            if (val.getType() == ValueType.ID) {
+            if (val instanceof SimpleId) {
                 String xi = ((SimpleId) val).getId();
                 if (store.get(xi) != null) {
                     return lookupChan(xi);
@@ -1733,16 +1613,12 @@ public class Debugger {
             return null;
         }
 
-        // better check on channels
-        switch (val.getType()) {
-            case ID:
-                return lookupVar(((SimpleId) val).getId());
-            case INT_ID:
-
-                return lookupVar(((IntID) val).getValue());
-            default:
-                return val;
+        if (val instanceof SimpleId) {
+            return lookupVar(((SimpleId) val).getId());
         }
+        
+        return val;
+        
     }
 
     static private String lookupProc(String id) {
@@ -1754,7 +1630,7 @@ public class Debugger {
         }
 
         if ((val = store.get(id)) != null) {
-            if (val.getType() == ValueType.ID) {
+            if (val instanceof SimpleId) {
                 String xi = ((SimpleId) val).getId();
                 if (store.get(xi) != null && !procs.containsKey(xi)) {
                     return lookupProc(xi);
@@ -1820,7 +1696,7 @@ public class Debugger {
             Tuple<Tuple<IValue, String>, String> ith = it.next();
             IValue val = ith.getFirst().getFirst();
             String tostring;
-            if (val.getType() == ValueType.ID) {
+            if (val instanceof SimpleId) {
                 tostring = printId(((SimpleId) val).getId());
             } else {
                 tostring = ith.getFirst().getFirst().toString();
@@ -1913,7 +1789,7 @@ public class Debugger {
             dchans.put(key, chans.get(key).clone());
         }
 
-        HashMap<String, IValue> dprocs = (HashMap<String, IValue>) procs
+        HashMap<String, Procedure> dprocs = (HashMap<String, Procedure>) procs
                 .clone();
         HashMap<String, IStatement> dthreadlist = (HashMap<String, IStatement>) threadlist
                 .clone();
@@ -1973,119 +1849,10 @@ public class Debugger {
             out.close();
             fileOut.close();
         } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-    }
-
-    static boolean evaluateExp(BoolExpr exp) {
-        boolean ret = false;
-        switch (exp.getOp()) {
-            case EQ:
-                ret = evaluateExp(exp.getSx()) == evaluateExp(exp.getDx());
-                break;
-            case NEQ:
-                ret = evaluateExp(exp.getSx()) != evaluateExp(exp.getDx());
-                break;
-            case LT:
-                ret = evaluateExp(exp.getSx()) < evaluateExp(exp.getDx());
-                break;
-            case LE:
-                ret = evaluateExp(exp.getSx()) <= evaluateExp(exp.getDx());
-                break;
-            case GT:
-                ret = evaluateExp(exp.getSx()) > evaluateExp(exp.getDx());
-                break;
-            case GE:
-                ret = evaluateExp(exp.getSx()) >= evaluateExp(exp.getDx());
-                break;
-            default:
-                break;
-        }
-        return ret;
-    }
-
-    static int evaluateExp(IntExp exp) {
-        int ret = 0;
-        switch (exp.getType()) {
-            case INT_ID: {
-                String id = ((IntID) exp).getValue();
-                IValue val = lookupVar(id);
-                if (val == null) {
-                    // maybe a better handling
-                    System.out.println(error + "undeclared variable " + id);
-                    System.exit(-1);
-                }
-                // should not be null
-                switch (val.getType()) {
-                    case CONST:
-                        return ((IntConst) val).getValue();
-                    case SUM: {
-                        SumValue cast = (SumValue) val;
-                        int s = evaluateExp(cast.getSx());
-                        int d = evaluateExp(cast.getDx());
-                        return s + d;
-                    }
-                    case SUB: {
-                        SubValue cast = (SubValue) val;
-                        int s = evaluateExp(cast.getSx());
-                        int d = evaluateExp(cast.getDx());
-                        return s - d;
-                    }
-                    case DIV: {
-                        SubValue cast = (SubValue) val;
-                        int s = evaluateExp(cast.getSx());
-                        int d = evaluateExp(cast.getDx());
-                        return s / d;
-                    }
-
-                    case MUL: {
-                        DivValue cast = (DivValue) val;
-                        int s = evaluateExp(cast.getSx());
-                        int d = evaluateExp(cast.getDx());
-                        return s * d;
-                    }
-                    case MOD: {
-                        ModValue cast = (ModValue) val;
-                        int s = evaluateExp(cast.getSx());
-                        int d = evaluateExp(cast.getDx());
-                        return s % d;
-                    }
-                }
-                break;
-            }
-            case CONST: {
-                return ((IntConst) exp).getValue();
-            }
-            case SUM: {
-                SumValue cast = (SumValue) exp;
-                return evaluateExp(cast.getSx()) + evaluateExp(cast.getDx());
-
-            }
-            case SUB: {
-                SubValue cast = (SubValue) exp;
-                return evaluateExp(cast.getSx()) - evaluateExp(cast.getDx());
-            }
-            case MUL: {
-                MulValue cast = (MulValue) exp;
-                return evaluateExp(cast.getSx()) * evaluateExp(cast.getDx());
-            }
-            case DIV: {
-                DivValue cast = (DivValue) exp;
-                return evaluateExp(cast.getSx()) / evaluateExp(cast.getDx());
-            }
-            case MOD: {
-                ModValue cast = (ModValue) exp;
-                return evaluateExp(cast.getSx()) % evaluateExp(cast.getDx());
-            }
-
-            default:
-                break;
-        }
-        return ret;
     }
 
     static private void printThreads() {
@@ -2107,24 +1874,6 @@ public class Debugger {
         System.out.println();
     }
 
-    static private boolean isConstantExp(IntExp exp) {
-        switch (exp.getType()) {
-            case CONST:
-                return true;
-            case SUB:
-            case SUM:
-            case DIV:
-            case MOD:
-            case MUL: {
-                BinaryIntExp op = (BinaryIntExp) exp;
-                return isConstantExp(op.getSx()) && isConstantExp(op.getDx());
-            }
-            default:
-                break;
-        }
-        return false;
-    }
-
     // decides whether a thread can move forward : always true but when it is
     // reading on an empty channel or it has already terminated (nil statement)
     static private boolean canMove(IStatement stm) {
@@ -2137,7 +1886,7 @@ public class Debugger {
             }
             case LET:
                 IValue val = ((Assignment) stm).getV();
-                if (val.getType() == ValueType.RECEIVE) {
+                if (val.getType() == ReceiveType.getInstance()) {
                     Receive rec = (Receive) val;
                     String from = rec.getFrom();
                     String xi = lookupChan(from);

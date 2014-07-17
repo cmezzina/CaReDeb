@@ -7,6 +7,7 @@ import java.util.HashMap;
 import language.history.IHistory;
 import language.statement.IStatement;
 import language.value.IValue;
+import language.value.Procedure;
 
 public class DumpedConfiguration implements Serializable {
 
@@ -17,7 +18,7 @@ public class DumpedConfiguration implements Serializable {
     private HashMap<String, IValue> store;
     private HashMap<String, Channel> chans;
     // procedure store
-    private HashMap<String, IValue> procs;
+    private HashMap<String, Procedure> procs;
     // thread pool
     private HashMap<String, IStatement> threadlist;
     private HashMap<String, ArrayList<IHistory>> history;
@@ -32,7 +33,7 @@ public class DumpedConfiguration implements Serializable {
     private int pc;
 
     public DumpedConfiguration(HashMap<String, IValue> store,
-            HashMap<String, Channel> chans, HashMap<String, IValue> procs,
+            HashMap<String, Channel> chans, HashMap<String, Procedure> procs,
             HashMap<String, IStatement> threadlist,
             HashMap<String, ArrayList<IHistory>> history,
             HashMap<String, IValue> expressions,
@@ -123,11 +124,11 @@ public class DumpedConfiguration implements Serializable {
         this.chans = chans;
     }
 
-    public HashMap<String, IValue> getProcs() {
+    public HashMap<String, Procedure> getProcs() {
         return procs;
     }
 
-    public void setProcs(HashMap<String, IValue> procs) {
+    public void setProcs(HashMap<String, Procedure> procs) {
         this.procs = procs;
     }
 

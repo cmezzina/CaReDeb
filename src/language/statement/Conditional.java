@@ -7,15 +7,16 @@
  * 
  * Contributors:
  *     Claudio Antares Mezzina - initial API and implementation
+ *     Davide Riccardo Caliendo 
  ******************************************************************************/
 package language.statement;
 
 import language.value.IValue;
+import language.value.expression.Expression;
 
 public class Conditional implements IStatement {
-
-    // before a simple String
-    IValue guard;
+    private static final long serialVersionUID = 2L;
+    Expression guard;
     IStatement left;
     IStatement right;
 
@@ -23,7 +24,7 @@ public class Conditional implements IStatement {
         return guard;
     }
 
-    public void setGuard(IValue guard) {
+    public void setGuard(Expression guard) {
         this.guard = guard;
     }
 
@@ -43,7 +44,7 @@ public class Conditional implements IStatement {
         this.right = right;
     }
 
-    public Conditional(IValue guard, IStatement left, IStatement right) {
+    public Conditional(Expression guard, IStatement left, IStatement right) {
         super();
         this.guard = guard;
         this.left = left;
@@ -52,7 +53,7 @@ public class Conditional implements IStatement {
 
     @Override
     public String toString() {
-        return "if " + guard + " then " + left + " else " + right + " end";
+        return "if " + guard.toString() + " then " + left + " else " + right + " end";
     }
 
     @Override
@@ -73,7 +74,7 @@ public class Conditional implements IStatement {
 
     @Override
     public Conditional clone() {
-        return new Conditional(guard.clone(), left.clone(), right.clone());
+        return new Conditional((Expression)guard.clone(), left.clone(), right.clone());
     }
 
 }

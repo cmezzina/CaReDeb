@@ -10,21 +10,17 @@
  ******************************************************************************/
 package exception;
 
-public class ChildMissingException extends Exception {
+/* Used for backward logic, stm is not needed as in common RuntimeException
+ */
+public class ChildMissingException extends RuntimeException {
 
-    /**
-	 * 
-	 */
-    private static final long serialVersionUID = 8770333969465630446L;
-    String msg;
+    private static final long serialVersionUID = 2L;
     String child;
 
-    public String getMsg() {
-        return msg;
-    }
-
-    public void setMsg(String msg) {
-        this.msg = msg;
+    public ChildMissingException(String msg, String child) {
+        super(null, msg);
+        msgPrefix = "Child missing exception:";
+        this.child = child;
     }
 
     public String getChild() {
@@ -38,11 +34,4 @@ public class ChildMissingException extends Exception {
     public static long getSerialversionuid() {
         return serialVersionUID;
     }
-
-    public ChildMissingException(String msg, String child) {
-        super();
-        this.msg = msg;
-        this.child = child;
-    }
-
 }

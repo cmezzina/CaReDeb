@@ -18,7 +18,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import language.value.IValue;
-import language.value.SimpleId;
+import language.value.expression.SimpleId;
 
 public class Channel implements Serializable {
 

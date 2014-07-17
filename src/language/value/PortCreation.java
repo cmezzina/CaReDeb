@@ -10,11 +10,14 @@
  ******************************************************************************/
 package language.value;
 
-public class PortCreation implements IValue {
+import language.value.type.PortType;
 
-    @Override
-    public ValueType getType() {
-        return ValueType.PORT;
+public class PortCreation extends IValue {
+
+    private static final long serialVersionUID = 1L;
+    
+    public PortCreation() {
+        type = PortType.getInstance();
     }
 
     @Override
@@ -24,8 +27,6 @@ public class PortCreation implements IValue {
 
     @Override
     public void rename(String old_id, String new_id) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override

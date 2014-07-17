@@ -8,34 +8,33 @@
 
 package language.value;
 
-import language.value.type.BoolType;
+import language.value.type.StringType;
 
-public class BoolValue extends IValue {
+public class StringValue extends IValue {
 
     private static final long serialVersionUID = 2L;
-    private boolean value;
+    private String value;
     
-    public BoolValue(boolean val) {
+    public StringValue(String val) {
         value = val;
-        type = BoolType.getInstance();
+        type = StringType.getInstance();
     }
 
     @Override
     public void rename(String old_id, String new_id) {
     }    
 
-    public boolean getTerm() {
+    public String getTerm() {
         return value;
     }
 
+    @Override
     public String toString() {
-        if (value)
-            return "true";
-        else
-            return "false";
+        return '"' + value + '"';
     }
     
+    @Override
     public IValue clone() {
-        return new BoolValue(value);
+        return new StringValue(value);
     }
 }

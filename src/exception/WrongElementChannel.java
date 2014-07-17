@@ -12,21 +12,17 @@ package exception;
 
 import java.util.HashMap;
 
-public class WrongElementChannel extends Exception {
+/* Used for backward logic, stm is not needed as in common RuntimeException
+ */
+public class WrongElementChannel extends RuntimeException {
 
-    /**
-	 * 
-	 */
-    private static final long serialVersionUID = 8770333969465630446L;
-    String msg;
+    private static final long serialVersionUID = 2L;
     HashMap<String, Integer> dependencies;
 
-    public String getMsg() {
-        return msg;
-    }
-
-    public void setMsg(String msg) {
-        this.msg = msg;
+    public WrongElementChannel(String msg, HashMap<String, Integer> dependencies) {
+        super(null, msg);
+        msgPrefix = "Wrong element channel:";
+        this.dependencies = dependencies;
     }
 
     public HashMap<String, Integer> getDependencies() {
@@ -40,11 +36,4 @@ public class WrongElementChannel extends Exception {
     public static long getSerialversionuid() {
         return serialVersionUID;
     }
-
-    public WrongElementChannel(String msg, HashMap<String, Integer> dependencies) {
-        super();
-        this.msg = msg;
-        this.dependencies = dependencies;
-    }
-
 }

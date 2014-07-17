@@ -1,4 +1,4 @@
-
+/*
 let a = 123 in 
 if (proc { n } skip end == proc { m } skip end) then 
 	let a = true in skip end
@@ -7,7 +7,7 @@ else
 end
 end
 
-/*
+
 let a = 123 in 
 if a then 
 	let a = true in skip end
@@ -16,3 +16,9 @@ else
 end
 end
 */
+
+let a = 123 in
+let b = 123 in
+if a == b then let c = a in skip end else skip end
+end
+end

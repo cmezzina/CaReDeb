@@ -7,22 +7,17 @@
  * 
  * Contributors:
  *     Claudio Antares Mezzina - initial API and implementation
- *     Davide Riccardo Caliendo - implementation
  ******************************************************************************/
+package exception;
 
-package language.value;
+import language.statement.IStatement;
 
-import java.io.Serializable;
+public class WrongIdException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
 
-import language.value.type.Type;
-
-public abstract class IValue implements Cloneable, Serializable {
-    private static final long serialVersionUID = 2L;
-    protected Type type;
-    public Type getType() {
-        return type;
+    public WrongIdException(IStatement stm, String msg) {
+        super(stm, msg);
+        msgPrefix = "Wrong id exception:";
     }
-    public abstract void rename(String old_id, String new_id);
-    public abstract IValue clone();
-    public abstract String toString();
+
 }

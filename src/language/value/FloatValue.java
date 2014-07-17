@@ -8,34 +8,32 @@
 
 package language.value;
 
-import language.value.type.BoolType;
+import language.value.type.FloatType;
 
-public class BoolValue extends IValue {
-
+public class FloatValue extends IValue {
     private static final long serialVersionUID = 2L;
-    private boolean value;
+    private float value;
     
-    public BoolValue(boolean val) {
-        value = val;
-        type = BoolType.getInstance();
+    public FloatValue(float v) {
+        value = v;
+        type = FloatType.getInstance();
     }
-
-    @Override
-    public void rename(String old_id, String new_id) {
-    }    
-
-    public boolean getTerm() {
+            
+    public float getTerm() {
         return value;
     }
-
-    public String toString() {
-        if (value)
-            return "true";
-        else
-            return "false";
+            
+    @Override
+    public void rename(String old_id, String new_id) {
     }
     
+    @Override
+    public String toString() {
+        return "" + value;
+    }     
+    
     public IValue clone() {
-        return new BoolValue(value);
+        return new FloatValue(value);
     }
 }
+    
