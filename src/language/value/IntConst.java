@@ -1,43 +1,43 @@
 package language.value;
 
-
 public class IntConst implements IntExp {
 
-	final static ValueType type = ValueType.CONST;
-	private int value ;
-	@Override
-	public ValueType getType() {
-		// TODO Auto-generated method stub
-		return type;
-	}
+    final static ValueType type = ValueType.CONST;
+    private int value;
 
-	public IntConst(int value)
-	{
-		this.value = value;
-	}
+    @Override
+    public ValueType getType() {
+        // TODO Auto-generated method stub
+        return type;
+    }
 
-	public int getValue() {
-		return value;
-	}
+    public IntConst(int value) {
+        this.value = value;
+    }
 
-	public void setValue(int value) {
-		this.value = value;
-	}
-	
-	public String toString()
-	{
-		return ""+value;
-	}
+    public int getValue() {
+        return value;
+    }
 
-	@Override
-	public void rename(String old_id, String new_id) {
-		// TODO Auto-generated method stub
-		
-	}
-	public IValue clone()
-	{
+    public void setValue(int value) {
+        this.value = value;
+    }
 
-		return new IntConst(value);
-	}
+    @Override
+    public String toString() {
+        return "" + value;
+    }
+
+    @Override
+    public void rename(String old_id, String new_id) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public IValue clone() {
+
+        return new IntConst(value);
+    }
 
 }

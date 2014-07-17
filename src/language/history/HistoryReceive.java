@@ -10,72 +10,57 @@
  ******************************************************************************/
 package language.history;
 
-
 public class HistoryReceive implements IHistory {
 
-	private String from;
-	private String var;
-	
-	private int instruction;
+    private String from;
+    private String var;
 
-	
-	public HistoryReceive(String from, String var, int instruction) {
-		super();
-		this.from = from;
-		this.var = var;
-		this.instruction= instruction;
-	}
+    private int instruction;
 
+    public HistoryReceive(String from, String var, int instruction) {
+        super();
+        this.from = from;
+        this.var = var;
+        this.instruction = instruction;
+    }
 
+    public String getFrom() {
+        return from;
+    }
 
-	public String getFrom() {
-		return from;
-	}
+    public void setFrom(String from) {
+        this.from = from;
+    }
 
+    public String getVar() {
+        return var;
+    }
 
+    public void setVar(String var) {
+        this.var = var;
+    }
 
-	public void setFrom(String from) {
-		this.from = from;
-	}
+    @Override
+    public int getInstruction() {
+        return instruction;
+    }
 
+    public void setInstruction(int instruction) {
+        this.instruction = instruction;
+    }
 
+    @Override
+    public HistoryType getType() {
+        return HistoryType.RECEIVE;
+    }
 
-	public String getVar() {
-		return var;
-	}
+    @Override
+    public String toString() {
+        return "read in " + var + " from " + from;
+    }
 
-
-
-	public void setVar(String var) {
-		this.var = var;
-	}
-
-
-
-	public int getInstruction() {
-		return instruction;
-	}
-
-
-
-	public void setInstruction(int instruction) {
-		this.instruction = instruction;
-	}
-
-
-
-	@Override
-	public HistoryType getType() {
-		return HistoryType.RECEIVE;
-	}
-
-	public String toString()
-	{
-		return "read in "+var + " from "+from;
-	}
-	
-	public IHistory clone()
-	{
-		return new HistoryReceive(from, var, instruction);
-	}
+    @Override
+    public IHistory clone() {
+        return new HistoryReceive(from, var, instruction);
+    }
 }

@@ -12,44 +12,43 @@ package language.value;
 
 public class SimpleId implements IValue {
 
-	private String id;
-	
-	public String getId() {
-		return id;
-	}
+    private String id;
 
-	public void setId(String id) {
-		this.id = id;
-	}
-	
-	
-	public SimpleId(String id) {
-		super();
-		this.id = id;
-	}
+    public String getId() {
+        return id;
+    }
 
-	@Override
-	public ValueType getType() {
-		return ValueType.ID;
-	}
-	
-	public String toString()
-	{
-		return id;
-		
-	}
+    public void setId(String id) {
+        this.id = id;
+    }
 
-	@Override
-	public void rename(String old_id, String new_id) {
-		// TODO Auto-generated method stub
-	if(this.id.equals(old_id))
-		this.id= new_id;
-	}
-	
-	public SimpleId clone()
-	{
-		return new SimpleId(id);
-	}
+    public SimpleId(String id) {
+        super();
+        this.id = id;
+    }
 
-	
+    @Override
+    public ValueType getType() {
+        return ValueType.ID;
+    }
+
+    @Override
+    public String toString() {
+        return id;
+
+    }
+
+    @Override
+    public void rename(String old_id, String new_id) {
+        // TODO Auto-generated method stub
+        if (this.id.equals(old_id)) {
+            this.id = new_id;
+        }
+    }
+
+    @Override
+    public SimpleId clone() {
+        return new SimpleId(id);
+    }
+
 }

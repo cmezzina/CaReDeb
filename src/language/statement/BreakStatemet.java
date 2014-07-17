@@ -2,25 +2,27 @@ package language.statement;
 
 public class BreakStatemet implements IStatement {
 
-	static StatementType type = StatementType.BREAK;
-	@Override
-	public StatementType getType() {
-		// TODO Auto-generated method stub
-		return type;
-	}
+    static StatementType type = StatementType.BREAK;
 
-	@Override
-	public void rename(String old_id, String new_id) {
-		// TODO Auto-generated method stub
+    @Override
+    public StatementType getType() {
+        // TODO Auto-generated method stub
+        return type;
+    }
 
-	}
-	public BreakStatemet clone()
-	{
-		return new BreakStatemet();
-	}
-	
-	public String toString()
-	{
-		return "breakpoint";
-	}
+    @Override
+    public void rename(String old_id, String new_id) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public BreakStatemet clone() {
+        return new BreakStatemet();
+    }
+
+    @Override
+    public String toString() {
+        return "breakpoint";
+    }
 }

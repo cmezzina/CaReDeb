@@ -10,80 +10,72 @@
  ******************************************************************************/
 package language.history;
 
-import java.io.Serializable;
-
 import language.statement.IStatement;
 import language.value.IValue;
 
 public class HistoryIf implements IHistory {
 
-	private IValue guard;
-	private IStatement body;
-	//indicates which part of the branch was not executed
-	private boolean left;
-	
-	public HistoryIf(IValue guard, IStatement body, boolean left) {
-		super();
-		this.guard = guard;
-		this.body = body;
-		this.left = left;
-	}
+    private IValue guard;
+    private IStatement body;
+    // indicates which part of the branch was not executed
+    private boolean left;
 
+    public HistoryIf(IValue guard, IStatement body, boolean left) {
+        super();
+        this.guard = guard;
+        this.body = body;
+        this.left = left;
+    }
 
-	public IValue getGuard() {
-		return guard;
-	}
+    public IValue getGuard() {
+        return guard;
+    }
 
+    public void setGuard(IValue guard) {
+        this.guard = guard;
+    }
 
-	public void setGuard(IValue guard) {
-		this.guard = guard;
-	}
+    public IStatement getBody() {
+        return body;
+    }
 
+    public void setBody(IStatement body) {
+        this.body = body;
+    }
 
-	public IStatement getBody() {
-		return body;
-	}
+    public boolean isLeft() {
+        return left;
+    }
 
+    public void setLeft(boolean left) {
+        this.left = left;
+    }
 
-	public void setBody(IStatement body) {
-		this.body = body;
-	}
+    @Override
+    public HistoryType getType() {
+        // TODO Auto-generated method stub
+        return HistoryType.IF;
+    }
 
+    @Override
+    public IHistory clone() {
+        return new HistoryIf(guard, body.clone(), left);
+    }
 
-	public boolean isLeft() {
-		return left;
-	}
+    @Override
+    public String toString() {
+        String ret = "if ( " + guard.toString() + " ) ";
+        if (left) {
+            return ret + " then _ else " + body.toString() + " end ";
+        }
 
+        return ret + " then  " + body.toString() + " else _ end ";
 
-	public void setLeft(boolean left) {
-		this.left = left;
-	}
+    }
 
-
-	@Override
-	public HistoryType getType() {
-		// TODO Auto-generated method stub
-		return HistoryType.IF;
-	}
-
-	public IHistory clone()
-	{
-		return new HistoryIf(guard, body.clone(), left);
-	}
-	public String toString()
-	{
-		String ret = "if ( "+guard.toString() +" ) ";
-		if(left)
-			return ret +" then _ else "+body.toString() + " end ";
-		
-		return ret +" then  "+body.toString() + " else _ end ";
-		
-	}
-
-
-	@Override
-	public int getInstruction() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public int getInstruction() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 }

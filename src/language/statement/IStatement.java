@@ -12,13 +12,12 @@ package language.statement;
 
 import java.io.Serializable;
 
-public interface IStatement extends Cloneable, Serializable{
+public interface IStatement extends Cloneable, Serializable {
 
-	StatementType getType();
-	
-	public void rename(String old_id, String new_id);
+    StatementType getType();
 
-	//clone should be of an abstract class
-	public IStatement clone();
+    public void rename(String old_id, String new_id);
+
+    // clone should be of an abstract class
+    public IStatement clone();
 }
-

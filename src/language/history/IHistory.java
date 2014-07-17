@@ -12,9 +12,10 @@ package language.history;
 
 import java.io.Serializable;
 
-public interface IHistory extends Cloneable,   Serializable{
-	public HistoryType getType();
-	public IHistory clone();
-	
-	public int getInstruction();
+public interface IHistory extends Cloneable, Serializable {
+    public HistoryType getType();
+
+    public IHistory clone();
+
+    public int getInstruction();
 }

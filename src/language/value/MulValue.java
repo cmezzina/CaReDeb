@@ -1,46 +1,57 @@
 package language.value;
 
+public class MulValue implements BinaryIntExp {
 
-public class MulValue implements BinaryIntExp{
+    final static ValueType type = ValueType.MUL;
 
-	final static ValueType type = ValueType.MUL;
-	
-	private IntExp sx,dx;
-	@Override
-	public ValueType getType() {
-		// TODO Auto-generated method stub
-		return type;
-	}
-	public IntExp getSx() {
-		return sx;
-	}
-	public void setSx(IntExp sx) {
-		this.sx = sx;
-	}
-	public IntExp getDx() {
-		return dx;
-	}
-	public void setDx(IntExp dx) {
-		this.dx = dx;
-	}
-	public MulValue(IntExp sx, IntExp dx) {
-		super();
-		this.sx = sx;
-		this.dx = dx;
-	}
-	public String toString()
-	{
-		return sx + " * "+ dx;
-	}
-	@Override
-	public void rename(String old_id, String new_id) {
-		this.sx.rename(old_id, new_id);
-		this.dx.rename(old_id, new_id);
-	}
+    private IntExp sx, dx;
 
-	public IValue clone()
-	{
+    @Override
+    public ValueType getType() {
+        // TODO Auto-generated method stub
+        return type;
+    }
 
-		return new MulValue((IntExp)sx.clone(), (IntExp)dx.clone());
-	}
+    @Override
+    public IntExp getSx() {
+        return sx;
+    }
+
+    @Override
+    public void setSx(IntExp sx) {
+        this.sx = sx;
+    }
+
+    @Override
+    public IntExp getDx() {
+        return dx;
+    }
+
+    @Override
+    public void setDx(IntExp dx) {
+        this.dx = dx;
+    }
+
+    public MulValue(IntExp sx, IntExp dx) {
+        super();
+        this.sx = sx;
+        this.dx = dx;
+    }
+
+    @Override
+    public String toString() {
+        return sx + " * " + dx;
+    }
+
+    @Override
+    public void rename(String old_id, String new_id) {
+        this.sx.rename(old_id, new_id);
+        this.dx.rename(old_id, new_id);
+    }
+
+    @Override
+    public IValue clone() {
+
+        return new MulValue((IntExp) sx.clone(), (IntExp) dx.clone());
+    }
 }

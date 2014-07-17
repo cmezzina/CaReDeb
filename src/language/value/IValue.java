@@ -12,9 +12,10 @@ package language.value;
 
 import java.io.Serializable;
 
-public interface IValue extends Cloneable,   Serializable  {
-	ValueType getType();
-	public void rename(String old_id, String new_id);
-	
-	public IValue clone();
+public interface IValue extends Cloneable, Serializable {
+    ValueType getType();
+
+    public void rename(String old_id, String new_id);
+
+    public IValue clone();
 }
