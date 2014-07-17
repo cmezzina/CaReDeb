@@ -1,5 +1,5 @@
 package language.value;
 
 public enum BoolOp {
-	EQ, GT, LT, LE, GE
+	EQ, NEQ, GT, LT, LE, GE, AND, OR;
 }

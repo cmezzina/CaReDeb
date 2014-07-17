@@ -49,20 +49,26 @@ public class BoolExpr implements IValue{
 	public String toString()
 	{
 		String op=null;
-		if(this.op == BoolOp.EQ)
-			op=" == ";
-		else
-			if(this.op == BoolOp.GT)
+		switch (this.op) {
+			case EQ:
+				op=" == ";
+				break;
+			case GT:
 				op=" > ";
-		else
-			if(this.op == BoolOp.LT)
+				break;
+			case LT:
 				op=" < ";
-		else
-			if(this.op == BoolOp.LE)
+				break;
+			case LE:
 				op=" <= ";
-			else
-				if(this.op == BoolOp.GE)
-					op=" >= ";
+				break;
+			case GE:
+				op=" >= ";
+				break;
+			case NEQ:
+				op=" \\= ";
+				break;
+		}
 				
 		return sx.toString() + op + dx.toString();
 	
