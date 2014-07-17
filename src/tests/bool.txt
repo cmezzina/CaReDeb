@@ -1,0 +1,18 @@
+
+let a = 123 in 
+if (proc { n } skip end == proc { m } skip end) then 
+	let a = true in skip end
+else
+	skip
+end
+end
+
+/*
+let a = 123 in 
+if a then 
+	let a = true in skip end
+else
+	skip
+end
+end
+*/
