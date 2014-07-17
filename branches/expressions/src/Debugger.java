@@ -61,6 +61,7 @@ import language.value.BinaryIntExp;
 import language.value.BoolExpr;
 import language.value.BoolValue;
 import language.value.DivValue;
+import language.value.ModValue;
 import language.value.IValue;
 import language.value.IntConst;
 import language.value.IntExp;
@@ -915,6 +916,7 @@ public class Debugger {
 					case SUM:
 					case MUL:
 					case DIV:
+					case MOD:
 					case SUB:
 					case CONST:
 					{
@@ -2169,6 +2171,9 @@ public class Debugger {
 		case EQ:
 			 ret = (evaluateExp(exp.getSx()) == evaluateExp(exp.getDx()));
 			break;
+		case NEQ:
+			 ret = (evaluateExp(exp.getSx()) != evaluateExp(exp.getDx()));
+			break;
 		case LT:
 			 ret = (evaluateExp(exp.getSx()) < evaluateExp(exp.getDx()));
 			 break;
@@ -2181,7 +2186,6 @@ public class Debugger {
 		case GE:
 			 ret = (evaluateExp(exp.getSx()) >= evaluateExp(exp.getDx()));
 			 break;
-			
 		default:
 			break;
 		}
@@ -2235,6 +2239,13 @@ public class Debugger {
 					int d = evaluateExp(cast.getDx());
 					return s*d;
 				}
+				case MOD:
+				{
+					ModValue cast = (ModValue)val;
+					int s = evaluateExp(cast.getSx());
+					int d = evaluateExp(cast.getDx());
+					return s%d;
+				}
 			}
 			break;
 		}
@@ -2263,7 +2274,11 @@ public class Debugger {
 			DivValue cast = (DivValue)exp;
 			return evaluateExp(cast.getSx()) / evaluateExp(cast.getDx());
 		}
-		
+		case MOD:
+		{
+			ModValue cast = (ModValue)exp;
+			return evaluateExp(cast.getSx()) % evaluateExp(cast.getDx());
+		}
 
 		default:
 			break;
@@ -2298,6 +2313,7 @@ public class Debugger {
 		case SUB:
 		case SUM:
 		case DIV:
+		case MOD:
 		case MUL:
 		{
 			BinaryIntExp op = (BinaryIntExp) exp;

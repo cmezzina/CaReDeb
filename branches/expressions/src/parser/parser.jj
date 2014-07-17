@@ -44,7 +44,7 @@ SKIP :{	< "/*" > : IN_COMMENT}<IN_COMMENT> SKIP :{	< "*/" > : DEFAULT	| <
 |  < PL: "(">
 |  < PR: ")">
 |  < PORT : "port">
-| < ISEQ : "==" >|  <  GT : ">" >|  < LT : "<" >| < LE : "<=" >| < GE : ">=" >| < MUL : "*" >| < PLUS : "+" >| < MINUS : "-" >| < DIV : "/" >
+| < ISEQ : "==" >| < ISNEQ : "\\=" >|  <  GT : ">" >|  < LT : "<" >| < LE : "<=" >| < GE : ">=" >| < MUL : "*" >| < PLUS : "+" >| < MINUS : "-" >| < DIV : "/" >| < MOD : "%" >
 | < BR : "<br>">| < ASS : "assert" >
 } 
 //identifiers
@@ -79,7 +79,7 @@ IStatement stm_list():
 IStatement stm():
 {	
   Token t=null;
-Token boolOp=null;  IValue val;
+  Token boolOp=null;  IValue val;
   IStatement sx = null;
   IStatement dx = null;
   IValue val1=null;  IValue val2=null;	  ArrayList< String> args; 
@@ -87,10 +87,10 @@ Token boolOp=null;  IValue val;
 {
   //skip 	
   < SK >  {
-    return new Skip();  }| 	<BR>	{	 	return new BreakStatemet(); 	}|	< ASS > (t=< ID> | <PL > val1=value() (boolOp=<ISEQ > | boolOp=< GT> | boolOp=<LT>| boolOp=<GE>| boolOp=<LE>) val2= value()< PR>)	{	  if(t!=null)	  	return new Assert(new SimpleId(t.toString()));	  	//better case analysis and better guar	  if(boolOp.toString().equals(">"))	  { 		  return new Assert(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.GT));	  }	  else	  	if(boolOp.toString().equals("<"))	  	{	  	    return new Assert(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.LT));	  	}	  else	  	if(boolOp.toString().equals("<="))	 	{	  	    return new Assert(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.LE));	 	}	 else	  	if(boolOp.toString().equals(">="))	 	{	  	    return new Assert(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.GE));	 	}		else  return new Assert(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.EQ));	}
+    return new Skip();  }| 	<BR>	{	 	return new BreakStatemet(); 	}|	< ASS > (t=< ID> | <PL > val1=value() (boolOp=<ISEQ > | boolOp=<ISNEQ> | boolOp=< GT> | boolOp=<LT>| boolOp=<GE>| boolOp=<LE>) val2= value()< PR>)	{	  if(t!=null)	  	return new Assert(new SimpleId(t.toString()));	  	//better case analysis and better guar	  if(boolOp.toString().equals(">"))	  { 		  return new Assert(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.GT));	  }	  else	  	if(boolOp.toString().equals("<"))	  	{	  	    return new Assert(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.LT));	  	}	  else	  	if(boolOp.toString().equals("<="))	 	{	  	    return new Assert(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.LE));	 	}	 else	  	if(boolOp.toString().equals(">="))	 	{	  	    return new Assert(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.GE));	 	}		 else 		if(boolOp.toString().equals("\\=")) 		{			return new Assert(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.NEQ));		}	 else 		if(boolOp.toString().equals("==")) 		{			return new Assert(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.EQ));		}	}
 |	//should put a trailing end ...
-	< IF> (t=< ID> |  < PL>val1=value() (boolOp=<ISEQ > | boolOp=< GT> | boolOp=<GE >| boolOp=<LT> | boolOp = <LE>) val2= value()< PR>) < THEN> sx = stm_list() < ELSE> dx =stm_list() < END>
-	{	  if(t!=null)	  	return new Conditional(new SimpleId(t.toString()),sx,dx);	  	//better case analysis and better guar	  if(boolOp.toString().equals(">"))	  {		  return new Conditional(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.GT),sx,dx);	  }	  else	  	if(boolOp.toString().equals("<"))	  	{	  	    return new Conditional(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.LT),sx,dx);	  	}	  else	  	if(boolOp.toString().equals("<="))	 	{	  	    return new Conditional(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.LE),sx,dx);	 	}	 	else	  	if(boolOp.toString().equals(">="))	 	{	  	    return new Conditional(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.GE),sx,dx);	 	}		else  return new Conditional(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.EQ),sx,dx);	}
+	< IF> (t=< ID> |  < PL>val1=value() (boolOp=<ISEQ > | boolOp=<ISNEQ> | boolOp=< GT> | boolOp=<GE >| boolOp=<LT> | boolOp = <LE>) val2= value()< PR>) < THEN> sx = stm_list() < ELSE> dx =stm_list() < END>
+	{	  if(t!=null)	  	return new Conditional(new SimpleId(t.toString()),sx,dx);	  	//better case analysis and better guar	  if(boolOp.toString().equals(">"))	  {		  return new Conditional(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.GT),sx,dx);	  }	  else	  	if(boolOp.toString().equals("<"))	  	{	  	    return new Conditional(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.LT),sx,dx);	  	}	  else	  	if(boolOp.toString().equals("<="))	 	{	  	    return new Conditional(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.LE),sx,dx);	 	}	 else	  	if(boolOp.toString().equals(">="))	 	{	  	    return new Conditional(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.GE),sx,dx);	 	}	 else 		if(boolOp.toString().equals("\\="))		{			return new Conditional(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.NEQ),sx,dx);		}	 else		return new Conditional(new BoolExpr((IntExp)val1,(IntExp)val2, BoolOp.EQ),sx,dx);	}
 |	//value or procedure assigment 
 	< LET> t =< ID> < EQ> ( val = value() | val = receive_value() ) <IN > sx=stm_list() < END>
 
@@ -177,7 +177,7 @@ IValue value():
 	< PORT>
 	{
 	  return new PortCreation();	}|	t =< ID> (exp = int_expr()		{		  lst.add(exp);		}	)*	{		exp = new IntID(t.toString());	  			if(lst.size() >0)		{           refactor(lst,1);            Iterator<IntExp> it = lst.iterator();           	while(it.hasNext())            {               	BinaryIntExp tmp1 = (BinaryIntExp) it.next();            	tmp1.setSx(exp);            	exp = tmp1;            }		}		return exp;	}|	(	  t= < ZERO > | t =< NUMBER >) ( exp = int_expr()		{		  lst.add(exp);		}	)*	 {	        exp = new IntConst(Integer.parseInt(t.toString()));		if(lst.size() >0)		{           refactor(lst,1);            Iterator<IntExp> it = lst.iterator();           	while(it.hasNext())            {               	BinaryIntExp tmp1 = (BinaryIntExp) it.next();            	tmp1.setSx(exp);            	exp = tmp1;            }		}		return exp;	}/* |	t= < NUMBER >  (exp = int_expr()	{		lst.add(exp);	}	)*	{            exp = new IntConst(Integer.parseInt(t.toString()));		if(lst.size() >0)		{           refactor(lst,1);            Iterator<IntExp> it = lst.iterator();           	while(it.hasNext())            {               	BinaryIntExp tmp1 = (BinaryIntExp) it.next();            	tmp1.setSx(exp);            	exp = tmp1;            }		}		return exp;	}*/}
-/** integer expressions **/IntExp int_expr():{  IntExp dx;}{  	< DIV > dx=number()	{	 return new DivValue(null, dx);	}	|	< MUL> dx=number()	{	  	return new MulValue(null, dx);	}| 		< PLUS > dx=number()	{		return new SumValue(null, dx);	}|	< MINUS > dx=number()	{		return new SubValue(null, dx);	}}IntExp number():{  Token t;}{  	t=< NUMBER>  	{  	   	  return new IntConst(Integer.parseInt(t.toString()));  	} | 	t=< ZERO> 	{ 		 return new IntConst(0);   	}|	t =< ID>	{	  return new IntID(t.toString()); 	}}
+/** integer expressions **/IntExp int_expr():{  IntExp dx;}{  	< DIV > dx=number()	{	 return new DivValue(null, dx);	}|	< MOD > dx=number()	{		return new ModValue(null, dx);	}|	< MUL> dx=number()	{	  	return new MulValue(null, dx);	}| 		< PLUS > dx=number()	{		return new SumValue(null, dx);	}|	< MINUS > dx=number()	{		return new SubValue(null, dx);	}}IntExp number():{  Token t;}{  	t=< NUMBER>  	{  	   	  return new IntConst(Integer.parseInt(t.toString()));  	} | 	t=< ZERO> 	{ 		 return new IntConst(0);   	}|	t =< ID>	{	  return new IntID(t.toString()); 	}}
 ArrayList< String> proc_var():
 {
   ArrayList< String> ret;}
