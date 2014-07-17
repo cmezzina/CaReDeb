@@ -75,10 +75,10 @@ import language.value.SumValue;
 import language.value.ValueType;
 import parser.ParseException;
 import parser.mozParser;
-import expection.AssertionException;
-import expection.BreakPointException;
-import expection.ChildMissingException;
-import expection.WrongElementChannel;
+import exception.AssertionException;
+import exception.BreakPointException;
+import exception.ChildMissingException;
+import exception.WrongElementChannel;
 public class Debugger {
 
 	static String path="";
