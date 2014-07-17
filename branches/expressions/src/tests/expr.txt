@@ -1,0 +1,53 @@
+let a = 5 * 2 + 1 + 1 + 1 in
+let b = 3 + 2 * 5 in
+let floa = 3. in skip end;
+let floa2 = 3.f in skip end;
+let floa3 = 3.0f in skip end;
+if a \= b then skip else
+let c = 1 + (5.5 + 0.5 ) * 2 in
+if false || a == c && true then
+let d = "good" in 
+let e = d + " program" in 
+let f = 1 + 3.2 in 
+if (a \= f) && f == 4.2 then
+let g = "different is also good" in 
+let h = a + b == 13 * 2 in 
+if h then 
+let i = 100 & 32 in
+let l = 1 | 32 == 33 in
+if l == true then 
+let n = a % 2.3 in 
+let o = 2.3 / a  in 
+let p = true & true in 
+let q = -a / 4.2 / 3 / 2.2 in 
+let r = 3 + -5 - 10 - (20  - 10 ) in 
+let s = --10 in skip end
+end
+end;
+/* non boolean guard exception */
+if a then skip else skip end;
+/* Raises expression error exception  */
+let asdasd = ~"asdasd" in skip end;
+/* this throws a cast exception error, allowing the user to inspect and roll creations */
+let z = a & "ADASD" in skip end
+end
+end
+end
+else skip end
+end
+end
+else
+skip
+end
+end
+
+end
+else skip end
+end
+end
+end
+else skip end
+end
+end
+end
+end

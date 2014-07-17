@@ -1,7 +1,7 @@
 let a = 10 in
 let b = 3 in
-let c = (a == b) in
-if a \= b then skip else skip end
+let c = a + b in
+if (a \= b) then skip else skip end
 end
 end 
 end

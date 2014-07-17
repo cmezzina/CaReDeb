@@ -6,23 +6,18 @@
  * http://www.gnu.org/licenses/gpl.html
  * 
  * Contributors:
- *     Claudio Antares Mezzina - initial API and implementation
  *     Davide Riccardo Caliendo - implementation
  ******************************************************************************/
 
-package language.value;
+package exception;
 
-import java.io.Serializable;
+import language.statement.IStatement;
 
-import language.value.type.Type;
-
-public abstract class IValue implements Cloneable, Serializable {
+public class ExpressionErrorException extends RuntimeException {
     private static final long serialVersionUID = 2L;
-    protected Type type;
-    public Type getType() {
-        return type;
+
+    public ExpressionErrorException(IStatement stm, String msg) {
+        super(stm, msg);
+        msgPrefix = "Expression exception:";
     }
-    public abstract void rename(String old_id, String new_id);
-    public abstract IValue clone();
-    public abstract String toString();
 }

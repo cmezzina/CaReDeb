@@ -1,4 +1,4 @@
-
+# A really simple makefile that generates the debugger and parser classes
 .PHONY: parser debugger clean
 parser: parser/parser.jj
 	cd parser;	rm *.java *.class 2>/dev/null;	javacc parser.jj

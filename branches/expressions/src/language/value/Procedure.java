@@ -7,18 +7,27 @@
  * 
  * Contributors:
  *     Claudio Antares Mezzina - initial API and implementation
+ *     Davide Riccardo Caliendo - implementation
  ******************************************************************************/
+
 package language.value;
 
 import java.util.ArrayList;
 
 import language.statement.IStatement;
+import language.value.type.ProcedureType;
+import language.value.type.Type;
 
-public class Procedure implements IValue {
+public class Procedure extends IValue {
 
+    private static final long serialVersionUID = 1L;
     ArrayList<String> params;
     IStatement body;
-
+    
+    // forbid default constructor
+    @SuppressWarnings("unused")
+    private Procedure() {}
+    
     public ArrayList<String> getParams() {
         return params;
     }
@@ -39,11 +48,7 @@ public class Procedure implements IValue {
         super();
         this.params = params;
         this.body = body;
-    }
-
-    @Override
-    public ValueType getType() {
-        return ValueType.PROCEDURE;
+        type = ProcedureType.getInstance();    
     }
 
     @Override

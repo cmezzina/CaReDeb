@@ -10,26 +10,24 @@
  ******************************************************************************/
 package language.value;
 
-public class Receive implements IValue {
+import language.value.type.ReceiveType;
 
+public class Receive extends IValue {
+
+    private static final long serialVersionUID = 2L;
     private String from;
 
+    public Receive(String from) {
+        this.from = from;
+        type = ReceiveType.getInstance();
+    }
+    
     public String getFrom() {
         return from;
     }
 
     public void setFrom(String from) {
         this.from = from;
-    }
-
-    public Receive(String from) {
-        super();
-        this.from = from;
-    }
-
-    @Override
-    public ValueType getType() {
-        return ValueType.RECEIVE;
     }
 
     @Override

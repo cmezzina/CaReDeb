@@ -1,0 +1,9 @@
+let b = port in 
+let c = (1 + 2) * 7 in
+{send b c};
+let a = {receive b} in 
+	let f = a + 22 in 
+	skip end
+end
+end
+end
